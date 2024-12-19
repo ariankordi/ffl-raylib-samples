@@ -194,7 +194,8 @@ const char* vertexShaderCodeFFL = GLSL_VERT(
         gl_Position = u_proj * v_position;
 
         // Compute normal matrix for non-skinned vertices
-        //if (skinningEnabled == 0) {
+        //if (skinningEnabled == 0)
+        //{
             mat3 normalMatrix = transpose(inverse(mat3(mv)));
             normal = normalize(normalMatrix * normal);
             tangent = normalize(normalMatrix * tangent);
@@ -323,7 +324,7 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
             color = vec4(color.r * u_const1.rgb, 1.0);
         }
 
-        if(color.a == 0.0)
+        if(u_mode != MODULATE_MODE_CONSTANT && color.a == 0.0)
         {
             discard;
         }
@@ -936,9 +937,9 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glDeleteBuffers(1, &indexBufferHandle);
 
-        #ifndef VAO_NOT_SUPPORTED
+#ifndef VAO_NOT_SUPPORTED
         glBindVertexArray(0);
-        #endif
+#endif
     }
 
     // Unbind the texture
@@ -976,9 +977,10 @@ FFLResult InitializeFFL()
     TraceLog(LOG_DEBUG, "Opened %s", cFFLResourceHighFilename);
     // Seek to the end to determine file size
     fseek(file, 0, SEEK_END);
-    long fileSize = ftell(file);
-    fseek(file, 0, SEEK_SET);  // Go back to the start of the file
-    if (fileSize <= 0) {
+    unsigned long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET); // Go back to the start of the file
+    if (fileSize <= 0)
+    {
         TraceLog(LOG_ERROR, "Invalid file size for %s", cFFLResourceHighFilename);
         fclose(file);
         return FFL_RESULT_FS_ERROR;
@@ -995,8 +997,9 @@ FFLResult InitializeFFL()
     */
     void* fileData = malloc((size_t)fileSize);
     // Read the file data into fileData
-    long bytesRead = fread(fileData, 1, (size_t)fileSize, file);
-    if (bytesRead == fileSize) {
+    size_t bytesRead = fread(fileData, 1, (size_t)fileSize, file);
+    if (bytesRead == fileSize)
+    {
         // Store the data and size in the appropriate resource type slot
         gResourceDesc.pData[FFL_RESOURCE_TYPE_HIGH] = fileData;
         gResourceDesc.size[FFL_RESOURCE_TYPE_HIGH] = (size_t)fileSize;
@@ -1137,36 +1140,36 @@ void CalculateVariableIconBodyScaleFactors(Vector3* scale, float build, float he
 }
 
 typedef enum VriableIconBodyBoneKind {
-    all_root=0,
-    body=1,
-    skl_root=2,
-    chest=3,
-    arm_l1=4,
-    arm_l2=5,
-    wrist_l=6,
-    elbow_l=7,
-    shoulder_l=8,
-    arm_r1=9,
-    arm_r2=10,
-    wrist_r=11,
-    elbow_r=12,
-    shoulder_r=13,
-    head=14,
-    chest_2=15,
-    hip=16,
-    foot_l1=17,
-    foot_l2=18,
-    ankle_l=19,
-    knee_l=20,
-    foot_r1=21,
-    foot_r2=22,
-    ankle_r=23,
-    knee_r=24,
-    BoneKind_End=25
+    all_root = 0,
+    body = 1,
+    skl_root = 2,
+    chest = 3,
+    arm_l1 = 4,
+    arm_l2 = 5,
+    wrist_l = 6,
+    elbow_l = 7,
+    shoulder_l = 8,
+    arm_r1 = 9,
+    arm_r2 = 10,
+    wrist_r = 11,
+    elbow_r = 12,
+    shoulder_r = 13,
+    head = 14,
+    chest_2 = 15,
+    hip = 16,
+    foot_l1 = 17,
+    foot_l2 = 18,
+    ankle_l = 19,
+    knee_l = 20,
+    foot_r1 = 21,
+    foot_r2 = 22,
+    ankle_r = 23,
+    knee_r = 24,
+    BoneKind_End = 25
 } VriableIconBodyBoneKind;
 
-void UpdateScaleForFFLBodyModel(Vector3 *scale, VriableIconBodyBoneKind boneIndex,
-                Vector3 scaleFactors)
+void UpdateScaleForFFLBodyModel(Vector3* scale, VriableIconBodyBoneKind boneIndex,
+    Vector3 scaleFactors)
 
 {
     switch (boneIndex)
@@ -1232,7 +1235,8 @@ void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int fr
 {
     if ((anim.frameCount > 0) && (anim.bones != NULL) && (anim.framePoses != NULL))
     {
-        if (frame >= anim.frameCount) frame = frame%anim.frameCount;
+        if (frame >= anim.frameCount)
+            frame = frame % anim.frameCount;
 
         for (int i = 0; i < model.meshCount; i++)
         {
@@ -1314,7 +1318,7 @@ int main(void)
     if (!isFFLAvailable)
         TraceLog(LOG_ERROR, "FFL is not available :(");
     else
-    TraceLog(LOG_DEBUG, "FFL initialized");
+        TraceLog(LOG_DEBUG, "FFL initialized");
 
     // Initialization
     //--------------------------------------------------------------------------------------
@@ -1374,7 +1378,7 @@ int main(void)
     int animsCount = 0;
     unsigned int animIndex = 0;
     unsigned int animCurrentFrame = 0;
-    ModelAnimation *modelAnimations = LoadModelAnimations(modelPath, &animsCount);
+    ModelAnimation* modelAnimations = LoadModelAnimations(modelPath, &animsCount);
 #endif
 
     SetTargetFPS(60);
@@ -1397,8 +1401,8 @@ int main(void)
         //acceMatrix = MatrixTranslate(partsTransform.hatTranslate.x, partsTransform.hatTranslate.y, partsTransform.hatTranslate.z);
         Matrix acceSideTranslate = MatrixTranslate(partsTransform.headSideTranslate.x, partsTransform.headSideTranslate.y, partsTransform.headSideTranslate.z);
         Matrix acceSideTranslateRight = MatrixTranslate(-partsTransform.headSideTranslate.x, partsTransform.headSideTranslate.y, partsTransform.headSideTranslate.z);
-        Matrix acceSideRotate = MatrixRotateXYZ((Vector3){ partsTransform.headSideRotate.x, partsTransform.headSideRotate.y, partsTransform.headSideRotate.z });
-        Matrix acceSideRotateRight = MatrixRotateXYZ((Vector3){ -partsTransform.headSideRotate.x, -partsTransform.headSideRotate.y, -partsTransform.headSideRotate.z });
+        Matrix acceSideRotate = MatrixRotateXYZ((Vector3) { partsTransform.headSideRotate.x, partsTransform.headSideRotate.y, partsTransform.headSideRotate.z });
+        Matrix acceSideRotateRight = MatrixRotateXYZ((Vector3) { -partsTransform.headSideRotate.x, -partsTransform.headSideRotate.y, -partsTransform.headSideRotate.z });
 
         acceMatrix = MatrixMultiply(acceSideRotate, acceSideTranslate);
         acceMatrixRight = MatrixMultiply(acceSideRotateRight, acceSideTranslateRight);
@@ -1410,7 +1414,7 @@ int main(void)
         CalculateVariableIconBodyScaleFactors(&modelFFLBodyScaleFactors, (float)iBuild, (float)iHeight);
         TraceLog(LOG_DEBUG, "Body scale factors: X %f, Y %f", modelFFLBodyScaleFactors.x, modelFFLBodyScaleFactors.y, modelFFLBodyScaleFactors.z);
     } else
-        modelFFLBodyScaleFactors = (Vector3){ 1.0f, 1.0f, 1.0f };
+        modelFFLBodyScaleFactors = (Vector3) { 1.0f, 1.0f, 1.0f };
 
     /*
     Vector3 vecBodyScaleFinal = Vector3Multiply(vecBodyScaleConst, modelFFLBodyScaleFactors);
@@ -1444,7 +1448,7 @@ int main(void)
 #ifndef NO_MODELS_FOR_TEST
         // Update model animation
         ModelAnimation anim = modelAnimations[animIndex];
-        animCurrentFrame = (animCurrentFrame + 1)%anim.frameCount;
+        animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
         MyUpdateModelAnimationBoneMatrices(model, anim, animCurrentFrame, modelFFLBodyScaleFactors);
 
         Matrix headBoneMatrix = model.meshes[0].boneMatrices[14];
@@ -1601,8 +1605,8 @@ int main(void)
 
 // update model's blink expression
 
-const float cBlinkInterval = 8.0; // 8 secs
-const float cBlinkDuration = 0.08; // 80ms
+const float cBlinkInterval = 8.0f; // 8 secs
+const float cBlinkDuration = 0.08f; // 80ms
 
 void UpdateCharModelBlink(bool* isBlinking, double* lastBlinkTime, FFLCharModel* pCharModel, double now)
 {
@@ -1614,7 +1618,7 @@ void UpdateCharModelBlink(bool* isBlinking, double* lastBlinkTime, FFLCharModel*
         FFLSetExpression(pCharModel, FFL_EXPRESSION_BLINK);
         *isBlinking = true;
         TraceLog(LOG_TRACE, "expression: FFL_EXPRESSION_BLINK");
-        *lastBlinkTime = now;  // Reset the blink time
+        *lastBlinkTime = now; // Reset the blink time
     }
 
     // Check if the blink should stop after 100ms

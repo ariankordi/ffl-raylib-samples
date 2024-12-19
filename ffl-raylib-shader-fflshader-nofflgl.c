@@ -1,34 +1,34 @@
 #if defined(_WIN32)
-#define NOGDI // All GDI defines and routines
-#define NOUSER // All USER defines and routines
+    #define NOGDI             // All GDI defines and routines
+    #define NOUSER            // All USER defines and routines
 #endif
 
 #if defined(PLATFORM_DESKTOP) || defined(PLATFORM_DESKTOP_SDL)
-#if defined(GRAPHICS_API_OPENGL_ES2)
-#include "glad/gles2.h" // Required for: OpenGL functionality
-#define VAO_NOT_SUPPORTED
-#define GLSL_VERSION 100
-#else
-#if defined(__APPLE__)
-// NOTE: ignoring macOS opengl 2.1
-#define GL_SILENCE_DEPRECATION // Silence Opengl API deprecation warnings
-#include <OpenGL/gl3.h> // OpenGL 3 library for OSX
-#include <OpenGL/gl3ext.h> // OpenGL 3 extensions library for OSX
-#define GLSL_VERSION 330
-#else
-#if defined(GRAPHICS_API_OPENGL_21)
-#include "glad/gl2.h" // NOTE: DOES NOT EXIST RN
-#define VAO_NOT_SUPPORTED
-#define GLSL_VERSION 120
-#else
-#include "glad/gl.h" // Required for: OpenGL functionality
-#define GLSL_VERSION 330
-#endif
-#endif
-#endif
-#else // PLATFORM_ANDROID, PLATFORM_WEB
-#define VAO_NOT_SUPPORTED
-#define GLSL_VERSION 100 // assume always gles
+    #if defined(GRAPHICS_API_OPENGL_ES2)
+        #include "glad/gles2.h"       // Required for: OpenGL functionality
+        #define VAO_NOT_SUPPORTED
+        #define GLSL_VERSION            100
+    #else
+        #if defined(__APPLE__)
+            // NOTE: ignoring macOS opengl 2.1
+            #define GL_SILENCE_DEPRECATION // Silence Opengl API deprecation warnings
+            #include <OpenGL/gl3.h>     // OpenGL 3 library for OSX
+            #include <OpenGL/gl3ext.h>  // OpenGL 3 extensions library for OSX
+            #define GLSL_VERSION            330
+        #else
+            #if defined(GRAPHICS_API_OPENGL_21)
+                #include "glad/gl2.h" // NOTE: DOES NOT EXIST RN
+                #define VAO_NOT_SUPPORTED
+                #define GLSL_VERSION            120
+            #else
+                #include "glad/gl.h"       // Required for: OpenGL functionality
+                #define GLSL_VERSION            330
+            #endif
+        #endif
+    #endif
+#else   // PLATFORM_ANDROID, PLATFORM_WEB
+    #define VAO_NOT_SUPPORTED
+    #define GLSL_VERSION            100 // assume always gles
 #endif
 
 /*
@@ -61,24 +61,26 @@ int FFLGladLoadGL(GLADloadfunc load); // also gladLoadGLES2
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
-#define GLSL_VERT(src) "#version " STR(GLSL_VERSION) "\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      \
-                                                     "#ifndef GL_ES\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
-                                                     "#define attribute in\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
-                                                     "#define varying out\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   \
-                                                     "#else\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
-                                                     "precision highp float;\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-                                                     "// define inverse and transpose functions for gles 2.0\n"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
-                                                     "highp mat3 inverse(highp mat3 m) {\n\thighp float c01 = m[2].z * m[1].y - m[1].z * m[2].y;\n\thighp float c11 = -m[2].z * m[1].x + m[1].z * m[2].x;\n\thighp float c21 = m[2].y * m[1].x - m[1].y * m[2].x;\n\thighp float d = 1.0 / (m[0].x * c01 + m[0].y * c11 + m[0].z * c21);\n\n\treturn mat3(c01, (-m[2].z * m[0].y + m[0].z * m[2].y), (m[1].z * m[0].y - m[0].z * m[1].y),\n\t\t\t\t   c11, (m[2].z * m[0].x - m[0].z * m[2].x), (-m[1].z * m[0].x + m[0].z * m[1].x),\n\t\t\t\t   c21, (-m[2].y * m[0].x + m[0].y * m[2].x), (m[1].y * m[0].x - m[0].y * m[1].x)) *\n\t\t\td;\n}\n\nhighp mat3 transpose(highp mat3 m) {\n\treturn mat3(\n\t\t\tvec3(m[0].x, m[1].x, m[2].x),\n\t\t\tvec3(m[0].y, m[1].y, m[2].y),\n\t\t\tvec3(m[0].z, m[1].z, m[2].z));\n}\n" \
-                                                     "#endif\n" #src
-#define GLSL_FRAG(src) "#version " STR(GLSL_VERSION) "\n"                               \
-                                                     "#ifndef GL_ES\n"                  \
-                                                     "#define varying in\n"             \
-                                                     "#define gl_FragColor FragColor\n" \
-                                                     "#define texture2D texture\n"      \
-                                                     "out vec4 FragColor;\n"            \
-                                                     "#else\n"                          \
-                                                     "precision mediump float;\n"       \
-                                                     "#endif\n" #src
+#define GLSL_VERT(src) "#version " STR(GLSL_VERSION) "\n" \
+    "#ifndef GL_ES\n" \
+        "#define attribute in\n" \
+        "#define varying out\n" \
+    "#else\n" \
+        "precision highp float;\n" \
+        "// define inverse and transpose functions for gles 2.0\n" \
+        "highp mat3 inverse(highp mat3 m) {\n\thighp float c01 = m[2].z * m[1].y - m[1].z * m[2].y;\n\thighp float c11 = -m[2].z * m[1].x + m[1].z * m[2].x;\n\thighp float c21 = m[2].y * m[1].x - m[1].y * m[2].x;\n\thighp float d = 1.0 / (m[0].x * c01 + m[0].y * c11 + m[0].z * c21);\n\n\treturn mat3(c01, (-m[2].z * m[0].y + m[0].z * m[2].y), (m[1].z * m[0].y - m[0].z * m[1].y),\n\t\t\t\t   c11, (m[2].z * m[0].x - m[0].z * m[2].x), (-m[1].z * m[0].x + m[0].z * m[1].x),\n\t\t\t\t   c21, (-m[2].y * m[0].x + m[0].y * m[2].x), (m[1].y * m[0].x - m[0].y * m[1].x)) *\n\t\t\td;\n}\n\nhighp mat3 transpose(highp mat3 m) {\n\treturn mat3(\n\t\t\tvec3(m[0].x, m[1].x, m[2].x),\n\t\t\tvec3(m[0].y, m[1].y, m[2].y),\n\t\t\tvec3(m[0].z, m[1].z, m[2].z));\n}\n" \
+    "#endif\n" \
+#src
+#define GLSL_FRAG(src) "#version " STR(GLSL_VERSION) "\n" \
+    "#ifndef GL_ES\n" \
+        "#define varying in\n" \
+        "#define gl_FragColor FragColor\n" \
+        "#define texture2D texture\n" \
+        "out vec4 FragColor;\n" \
+    "#else\n" \
+        "precision mediump float;\n" \
+    "#endif\n" \
+#src
 
 const char* vertexShaderCodeFFL = GLSL_VERT(
     attribute vec4 a_position;
@@ -90,16 +92,16 @@ const char* vertexShaderCodeFFL = GLSL_VERT(
     attribute vec4 vertexBoneIds;
     attribute vec4 vertexBoneWeights;
 
-    varying vec4 v_color;
-    varying vec4 v_position;
-    varying vec3 v_normal;
-    varying vec3 v_tangent;
-    varying vec2 v_texCoord;
+    varying   vec4 v_color;
+    varying   vec4 v_position;
+    varying   vec3 v_normal;
+    varying   vec3 v_tangent;
+    varying   vec2 v_texCoord;
 
-    uniform mat4 u_model; // u_mv;
-    uniform mat4 u_view;
-    uniform mat4 u_proj;
-    // uniform   mat4 u_it;
+    uniform   mat4 u_model; //u_mv;
+    uniform   mat4 u_view;
+    uniform   mat4 u_proj;
+    //uniform   mat4 u_it;
 
     uniform mat4 boneMatrices[80];
     uniform int skinningEnabled;
@@ -149,12 +151,14 @@ const char* vertexShaderCodeFFL = GLSL_VERT(
             v_color = a_color;
         }
     */
-    void main() {
+    void main()
+    {
         vec4 position;
         vec3 normal;
         vec3 tangent;
 
-        if (skinningEnabled == 1) {
+        if (skinningEnabled == 1)
+        {
             // Transform position
             position = vec4(0.0);
             position += vertexBoneWeights[0] * boneMatrices[int(vertexBoneIds[0])] * a_position;
@@ -186,8 +190,10 @@ const char* vertexShaderCodeFFL = GLSL_VERT(
             */
             tangent = a_tangent;
 
-            // normal = a_normal;
-        } else {
+            //normal = a_normal;
+        }
+        else
+        {
             position = a_position;
             normal = a_normal;
             tangent = a_tangent;
@@ -199,27 +205,30 @@ const char* vertexShaderCodeFFL = GLSL_VERT(
         gl_Position = u_proj * v_position;
 
         // Compute normal matrix for non-skinned vertices
-        // if (skinningEnabled == 0) {
-        mat3 normalMatrix = transpose(inverse(mat3(mv)));
-        normal = normalize(normalMatrix * normal);
-        tangent = normalize(normalMatrix * tangent);
+        //if (skinningEnabled == 0)
+        //{
+            mat3 normalMatrix = transpose(inverse(mat3(mv)));
+            normal = normalize(normalMatrix * normal);
+            tangent = normalize(normalMatrix * tangent);
         //}
 
         v_normal = normal;
         v_tangent = tangent;
         v_texCoord = a_texCoord;
         v_color = a_color;
-    });
+    }
+);
 
 const char* fragmentShaderCodeFFL = GLSL_FRAG(
-    const int MODULATE_MODE_CONSTANT = 0;
-    const int MODULATE_MODE_TEXTURE_DIRECT = 1;
-    const int MODULATE_MODE_RGB_LAYERED = 2;
-    const int MODULATE_MODE_ALPHA = 3;
+    const int MODULATE_MODE_CONSTANT        = 0;
+    const int MODULATE_MODE_TEXTURE_DIRECT  = 1;
+    const int MODULATE_MODE_RGB_LAYERED     = 2;
+    const int MODULATE_MODE_ALPHA           = 3;
     const int MODULATE_MODE_LUMINANCE_ALPHA = 4;
-    const int MODULATE_MODE_ALPHA_OPA = 5;
+    const int MODULATE_MODE_ALPHA_OPA       = 5;
 
-    mediump float calculateAnisotropicSpecular(mediump vec3 light, mediump vec3 tangent, mediump vec3 eye, mediump float power) {
+    mediump float calculateAnisotropicSpecular(mediump vec3 light, mediump vec3 tangent, mediump vec3 eye, mediump float power)
+    {
         mediump float dotLT = dot(light, tangent);
         mediump float dotVT = dot(eye, tangent);
         mediump float dotLN = sqrt(1.0 - dotLT * dotLT);
@@ -227,31 +236,38 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
         return pow(max(0.0, dotVR), power);
     }
 
-    mediump float calculateBlinnSpecular(mediump vec3 light, mediump vec3 normal, mediump vec3 eye, mediump float power) {
+    mediump float calculateBlinnSpecular(mediump vec3 light, mediump vec3 normal, mediump vec3 eye, mediump float power)
+    {
         return pow(max(dot(reflect(-light, normal), eye), 0.0), power);
     }
 
-    mediump float calculateSpecularBlend(mediump float blend, mediump float blinn, mediump float aniso) {
+    mediump float calculateSpecularBlend(mediump float blend, mediump float blinn, mediump float aniso)
+    {
         return mix(aniso, blinn, blend);
     }
 
-    mediump vec3 calculateAmbientColor(mediump vec3 light, mediump vec3 material) {
+    mediump vec3 calculateAmbientColor(mediump vec3 light, mediump vec3 material)
+    {
         return light * material;
     }
 
-    mediump vec3 calculateDiffuseColor(mediump vec3 light, mediump vec3 material, mediump float ln) {
+    mediump vec3 calculateDiffuseColor(mediump vec3 light, mediump vec3 material, mediump float ln)
+    {
         return light * material * ln;
     }
 
-    mediump vec3 calculateSpecularColor(mediump vec3 light, mediump vec3 material, mediump float reflection, mediump float strength) {
+    mediump vec3 calculateSpecularColor(mediump vec3 light, mediump vec3 material, mediump float reflection, mediump float strength)
+    {
         return light * material * reflection * strength;
     }
 
-    mediump vec3 calculateRimColor(mediump vec3 color, mediump float normalZ, mediump float width, mediump float power) {
+    mediump vec3 calculateRimColor(mediump vec3 color, mediump float normalZ, mediump float width, mediump float power)
+    {
         return color * pow(width * (1.0 - abs(normalZ)), power);
     }
 
-    mediump float calculateDot(mediump vec3 light, mediump vec3 normal) {
+    mediump float calculateDot(mediump vec3 light, mediump vec3 normal)
+    {
         return max(dot(light, normal), 0.1);
     }
 
@@ -261,9 +277,9 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
     varying mediump vec3 v_tangent;
     varying mediump vec2 v_texCoord;
 
-    uniform mediump vec3 u_const1;
-    uniform mediump vec3 u_const2;
-    uniform mediump vec3 u_const3;
+    uniform mediump vec3  u_const1;
+    uniform mediump vec3  u_const2;
+    uniform mediump vec3  u_const3;
 
     uniform mediump vec3 u_light_ambient;
     uniform mediump vec3 u_light_diffuse;
@@ -279,39 +295,53 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
 
     uniform int u_mode;
 
-    uniform mediump vec3 u_rim_color;
+    uniform mediump vec3  u_rim_color;
     uniform mediump float u_rim_power;
 
     uniform sampler2D s_texture;
 
-    void main() {
+    void main()
+    {
         mediump vec4 color;
         mediump float specularPower = u_material_specular_power;
         mediump float rimWidth = v_color.a;
 
-        if (u_mode == MODULATE_MODE_CONSTANT) {
+        if(u_mode == MODULATE_MODE_CONSTANT)
+        {
             color = vec4(u_const1, 1.0);
-        } else if (u_mode == MODULATE_MODE_TEXTURE_DIRECT) {
+        }
+        else if(u_mode == MODULATE_MODE_TEXTURE_DIRECT)
+        {
             color = texture2D(s_texture, v_texCoord);
-        } else if (u_mode == MODULATE_MODE_RGB_LAYERED) {
+        }
+        else if(u_mode == MODULATE_MODE_RGB_LAYERED)
+        {
             color = texture2D(s_texture, v_texCoord);
             color = vec4(color.r * u_const1.rgb + color.g * u_const2.rgb + color.b * u_const3.rgb, color.a);
-        } else if (u_mode == MODULATE_MODE_ALPHA) {
+        }
+        else if(u_mode == MODULATE_MODE_ALPHA)
+        {
             color = texture2D(s_texture, v_texCoord);
             color = vec4(u_const1.rgb, color.r);
-        } else if (u_mode == MODULATE_MODE_LUMINANCE_ALPHA) {
+        }
+        else if(u_mode == MODULATE_MODE_LUMINANCE_ALPHA)
+        {
             color = texture2D(s_texture, v_texCoord);
             color = vec4(color.g * u_const1.rgb, color.r);
-        } else if (u_mode == MODULATE_MODE_ALPHA_OPA) {
+        }
+        else if(u_mode == MODULATE_MODE_ALPHA_OPA)
+        {
             color = texture2D(s_texture, v_texCoord);
             color = vec4(color.r * u_const1.rgb, 1.0);
         }
 
-        if (color.a == 0.0) {
+        if(u_mode != MODULATE_MODE_CONSTANT && color.a == 0.0)
+        {
             discard;
         }
 
-        if (u_light_enable) {
+        if(u_light_enable)
+        {
             mediump vec3 ambient = calculateAmbientColor(u_light_ambient.xyz, u_material_ambient.xyz);
             mediump vec3 norm = normalize(v_normal);
             mediump vec3 eye = normalize(-v_position.xyz);
@@ -321,11 +351,13 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
 
             mediump float reflection;
             mediump float strength = v_color.g;
-            if (u_material_specular_mode == 0) // blinn
+            if(u_material_specular_mode == 0) // blinn
             {
                 strength = 1.0;
                 reflection = specularBlinn;
-            } else {
+            }
+            else
+            {
                 mediump float specularAniso = calculateAnisotropicSpecular(u_light_dir, v_tangent, eye, u_material_specular_power);
                 reflection = calculateSpecularBlend(v_color.r, specularBlinn, specularAniso);
             }
@@ -335,10 +367,13 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
         }
 
         gl_FragColor = color;
-    });
+    }
+);
+
 
 // Material tables for FFL shader
-typedef struct FFLiDefaultShaderMaterial {
+typedef struct FFLiDefaultShaderMaterial
+{
     Vector3 ambient;
     Vector3 diffuse;
     Vector3 specular;
@@ -350,9 +385,9 @@ typedef struct FFLiDefaultShaderMaterial {
 // on textures (mask, glass, noseline) completely black
 // for certain WebGL implementations? but using blinn fixes it
 #if GLSL_VERSION == 330
-#define SPECULAR_MODE_TEXTURE_MASKS 1
+    #define SPECULAR_MODE_TEXTURE_MASKS 1
 #else
-#define SPECULAR_MODE_TEXTURE_MASKS 0
+    #define SPECULAR_MODE_TEXTURE_MASKS 0
 #endif
 
 #define MATERIAL_PARAM_SIZE FFL_MODULATE_TYPE_SHAPE_MAX + 2
@@ -360,72 +395,63 @@ typedef struct FFLiDefaultShaderMaterial {
 #define MATERIAL_PARAM_BODY FFL_MODULATE_TYPE_SHAPE_MAX
 #define MATERIAL_PARAM_PANTS FFL_MODULATE_TYPE_SHAPE_MAX + 1
 FFLiDefaultShaderMaterial cMaterialParam[MATERIAL_PARAM_SIZE] = {
-    {
-        // ShapeFaceline
+    { // ShapeFaceline
         { 0.85f, 0.75f, 0.75f }, // ambient
         { 0.75f, 0.75f, 0.75f }, // diffuse
         { 0.30f, 0.30f, 0.30f }, // specular
         1.2f, // specularPower
         0 // specularMode
     },
-    {
-        // ShapeBeard
+    { // ShapeBeard
         { 1.0f, 1.0f, 1.0f }, // ambient
         { 0.7f, 0.7f, 0.7f }, // diffuse
         { 0.0f, 0.0f, 0.0f }, // specular
         40.0f, // specularPower
         1 // specularMode
     },
-    {
-        // ShapeNose
+    { // ShapeNose
         { 0.90f, 0.85f, 0.85f }, // ambient
         { 0.75f, 0.75f, 0.75f }, // diffuse
         { 0.22f, 0.22f, 0.22f }, // specular
         1.5f, // specularPower
         0 // specularMode
     },
-    {
-        // ShapeForehead
+    { // ShapeForehead
         { 0.85f, 0.75f, 0.75f }, // ambient
         { 0.75f, 0.75f, 0.75f }, // diffuse
         { 0.30f, 0.30f, 0.30f }, // specular
         1.2f, // specularPower
         0 // specularMode
     },
-    {
-        // ShapeHair
+    { // ShapeHair
         { 1.00f, 1.00f, 1.00f }, // ambient
         { 0.70f, 0.70f, 0.70f }, // diffuse
         { 0.35f, 0.35f, 0.35f }, // specular
         10.0f, // specularPower
         1 // specularMode
     },
-    {
-        // ShapeCap
+    { // ShapeCap
         { 0.75f, 0.75f, 0.75f }, // ambient
         { 0.72f, 0.72f, 0.72f }, // diffuse
         { 0.30f, 0.30f, 0.30f }, // specular
         1.5f, // specularPower
         0 // specularMode
     },
-    {
-        // ShapeMask
+    { // ShapeMask
         { 1.0f, 1.0f, 1.0f }, // ambient
         { 0.7f, 0.7f, 0.7f }, // diffuse
         { 0.0f, 0.0f, 0.0f }, // specular
         40.0f, // specularPower
         SPECULAR_MODE_TEXTURE_MASKS // specularMode
     },
-    {
-        // ShapeNoseline
+    { // ShapeNoseline
         { 1.0f, 1.0f, 1.0f }, // ambient
         { 0.7f, 0.7f, 0.7f }, // diffuse
         { 0.0f, 0.0f, 0.0f }, // specular
         40.0f, // specularPower
         SPECULAR_MODE_TEXTURE_MASKS // specularMode
     },
-    {
-        // ShapeGlass
+    { // ShapeGlass
         { 1.0f, 1.0f, 1.0f }, // ambient
         { 0.7f, 0.7f, 0.7f }, // diffuse
         { 0.0f, 0.0f, 0.0f }, // specular
@@ -434,16 +460,14 @@ FFLiDefaultShaderMaterial cMaterialParam[MATERIAL_PARAM_SIZE] = {
     },
     // HACK: THESE COLLIDE!!!
     // but it's with textures which have no lighting
-    {
-        // body
+    { // body
         { 0.95622f, 0.95622f, 0.95622f }, // 0.69804
         { 0.496733f, 0.496733f, 0.496733f }, // 0.29804
         { 0.2409f, 0.2409f, 0.2409f }, // 0.16863
         3.0f, // specularPower
         0 // specularMode
     },
-    {
-        // pants
+    { // pants
         { 0.95622f, 0.95622f, 0.95622f }, // 0.69804
         { 1.084967f, 1.084967f, 1.084967f }, // 0.65098
         { 0.2409f, 0.2409f, 0.2409f }, // 0.16863
@@ -452,8 +476,8 @@ FFLiDefaultShaderMaterial cMaterialParam[MATERIAL_PARAM_SIZE] = {
     }
 };
 
-const Vector3 cLightAmbient = { 0.73f, 0.73f, 0.73f };
-const Vector3 cLightDiffuse = { 0.60f, 0.60f, 0.60f };
+const Vector3 cLightAmbient  = { 0.73f, 0.73f, 0.73f };
+const Vector3 cLightDiffuse  = { 0.60f, 0.60f, 0.60f };
 const Vector3 cLightSpecular = { 0.70f, 0.70f, 0.70f };
 
 const Vector3 cLightDir = { -0.4531539381f, 0.4226179123f, 0.7848858833f };
@@ -464,17 +488,19 @@ const Vector3 cRimColorBody = { 0.4f, 0.4f, 0.4f };
 const float cRimPower = 2.0f;
 
 #ifndef SHADER_FFL_SPECULAR_MODE
-#define SHADER_FFL_SPECULAR_MODE 1 // aniso
+    #define SHADER_FFL_SPECULAR_MODE 1 // aniso
 #endif
 
 // Shader uniform enums for shader for FFL
-enum ShaderFFLVertexUniform {
+enum ShaderFFLVertexUniform
+{
     SH_FFL_VERTEX_UNIFORM_MV = 0,
     SH_FFL_VERTEX_UNIFORM_PROJ,
-    // SH_FFL_VERTEX_UNIFORM_IT,
+    //SH_FFL_VERTEX_UNIFORM_IT,
     SH_FFL_VERTEX_UNIFORM_MAX
 };
-enum ShaderFFLPixelUniform {
+enum ShaderFFLPixelUniform
+{
     SH_FFL_PIXEL_UNIFORM_CONST1 = 0,
     SH_FFL_PIXEL_UNIFORM_CONST2,
     SH_FFL_PIXEL_UNIFORM_CONST3,
@@ -494,12 +520,13 @@ enum ShaderFFLPixelUniform {
     SH_FFL_PIXEL_UNIFORM_MAX
 };
 
+
 // Shader for FFL
 typedef struct {
     Shader shader; // Raylib Shader
-    // int vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_MAX];
+    //int vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_MAX];
     int pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_MAX];
-    // int samplerLocation;
+    //int samplerLocation;
     int attributeLocation[FFL_ATTRIBUTE_BUFFER_TYPE_MAX];
     GLuint vboHandle[FFL_ATTRIBUTE_BUFFER_TYPE_MAX];
     GLuint vaoHandle;
@@ -516,7 +543,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* drawParam);
 void ShaderForFFL_SetMatrixCallback(void* pObj, const FFLRIOBaseMtx44f* pBaseMtx44f);
 
 // Define RIO Texture2D for interop
-typedef struct Texture2DRIO {
+typedef struct Texture2DRIO
+{
 
     // Offset before mHandle
     char padding[128]; // NOTE: rio::Texture2D does NOT have pointers
@@ -534,17 +562,18 @@ void ShaderForFFL_Initialize(ShaderForFFL* self)
 
     // Load the shader
     self->shader = LoadShaderFromMemory(vertexShaderCodeFFL, fragmentShaderCodeFFL);
+    assert(self->shader.locs != NULL); // Shader did not load correctly.
     TraceLog(LOG_DEBUG, "Shader loaded");
 
     // Get uniform locations
-    self->shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(self->shader, "u_model"); //"u_mv");
+    self->shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(self->shader, "u_model");//"u_mv");
     TraceLog(LOG_TRACE, "Vertex uniform 'u_model' location: %d", self->shader.locs[SHADER_LOC_MATRIX_MODEL]);
     self->shader.locs[SHADER_LOC_MATRIX_VIEW] = GetShaderLocation(self->shader, "u_view");
     TraceLog(LOG_TRACE, "Vertex uniform 'u_view' location: %d", self->shader.locs[SHADER_LOC_MATRIX_VIEW]);
     self->shader.locs[SHADER_LOC_MATRIX_PROJECTION] = GetShaderLocation(self->shader, "u_proj");
     TraceLog(LOG_TRACE, "Vertex uniform 'u_proj' location: %d", self->shader.locs[SHADER_LOC_MATRIX_PROJECTION]);
-    // self->vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_IT] = GetShaderLocation(self->shader, "u_it");
-    // TraceLog(LOG_TRACE, "Vertex uniform 'u_it' location: %d", self->vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_IT]);
+    //self->vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_IT] = GetShaderLocation(self->shader, "u_it");
+    //TraceLog(LOG_TRACE, "Vertex uniform 'u_it' location: %d", self->vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_IT]);
 
     gLocationOfShaderForFFLSkinningEnable = GetShaderLocation(self->shader, "skinningEnabled");
 
@@ -587,7 +616,8 @@ void ShaderForFFL_Initialize(ShaderForFFL* self)
     TraceLog(LOG_TRACE, "Pixel uniform 'u_rim_color' location: %d", self->pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_RIM_COLOR]);
     TraceLog(LOG_TRACE, "Pixel uniform 'u_rim_power' location: %d", self->pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_RIM_POWER]);
 
-    // self->samplerLocation = GetShaderLocation(self->shader, "s_texture");
+
+    //self->samplerLocation = GetShaderLocation(self->shader, "s_texture");
     self->shader.locs[SHADER_LOC_MAP_ALBEDO] = GetShaderLocation(self->shader, "s_texture");
     TraceLog(LOG_TRACE, "Sampler uniform 's_texture' location: %d", self->shader.locs[SHADER_LOC_MAP_ALBEDO]);
 
@@ -641,8 +671,10 @@ void ShaderForFFL_Bind(ShaderForFFL* self, bool forInitTextures)
     TraceLog(LOG_TRACE, "VAO bound");
 #endif
 
-    for (int i = 0; i < FFL_ATTRIBUTE_BUFFER_TYPE_MAX; i++) {
-        if (self->attributeLocation[i] != -1) {
+    for (int i = 0; i < FFL_ATTRIBUTE_BUFFER_TYPE_MAX; i++)
+    {
+        if (self->attributeLocation[i] != -1)
+        {
             glDisableVertexAttribArray(self->attributeLocation[i]);
             TraceLog(LOG_TRACE, "Disabled vertex attrib array at location: %d", self->attributeLocation[i]);
         }
@@ -684,13 +716,14 @@ void ShaderForFFL_SetViewUniform(ShaderForFFL* self, const Matrix* model_mtx, co
     else
         proj = MatrixIdentity();
 
+
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_MODEL], model);
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_VIEW], view);
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_PROJECTION], proj);
 
     // Calculate the inverse transpose of the MV matrix
-    // Matrix normalMatrix = MatrixTranspose(MatrixInvert(mv));
-    // SetShaderValueMatrix(self->shader, self->vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_IT], normalMatrix);
+    //Matrix normalMatrix = MatrixTranspose(MatrixInvert(mv));
+    //SetShaderValueMatrix(self->shader, self->vertexUniformLocation[SH_FFL_VERTEX_UNIFORM_IT], normalMatrix);
 }
 
 // Apply Alpha Test (no-op for now)
@@ -706,7 +739,7 @@ void ShaderForFFL_ApplyAlphaTest(bool enable, FFLRIOCompareFunc func, float ref)
 void ShaderForFFL_ApplyAlphaTestCallback(void* pObj, bool enable, FFLRIOCompareFunc func, float ref)
 {
     TraceLog(LOG_TRACE, "ApplyAlphaTestCallback(%p, %b, %d, %f)", pObj, enable, func, ref);
-    // ShaderForFFL_ApplyAlphaTest(enable, func, ref);
+    //ShaderForFFL_ApplyAlphaTest(enable, func, ref);
 }
 
 // Set Culling Mode
@@ -714,7 +747,8 @@ void ShaderForFFL_SetCulling(FFLCullMode mode)
 {
     TraceLog(LOG_TRACE, "Setting FFLCullMode: %d", mode);
 
-    switch (mode) {
+    switch (mode)
+    {
     case FFL_CULL_MODE_NONE:
         glDisable(GL_CULL_FACE);
         TraceLog(LOG_TRACE, "Culling disabled (FFL_CULL_MODE_NONE)");
@@ -746,6 +780,7 @@ void ShaderForFFL_SetMaterial(ShaderForFFL* self, const FFLiDefaultShaderMateria
         specularMode = pMaterial->specularMode; // set it
     SetShaderValue(self->shader, self->pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_MATERIAL_SPECULAR_MODE], &specularMode, SHADER_UNIFORM_INT);
     SetShaderValue(self->shader, self->pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_MATERIAL_SPECULAR_POWER], &pMaterial->specularPower, SHADER_UNIFORM_FLOAT);
+
 }
 
 // Callback: Set Matrix
@@ -756,22 +791,10 @@ void ShaderForFFL_SetMatrixCallback(void* pObj, const FFLRIOBaseMtx44f* pBaseMtx
     TraceLog(LOG_TRACE, "In ShaderForFFL_SetMatrixCallback");
     Matrix matrix;
     // Raylib matrix is in column-major order
-    matrix.m0 = pBaseMtx44f->m[0][0];
-    matrix.m4 = pBaseMtx44f->m[0][1];
-    matrix.m8 = pBaseMtx44f->m[0][2];
-    matrix.m12 = pBaseMtx44f->m[0][3];
-    matrix.m1 = pBaseMtx44f->m[1][0];
-    matrix.m5 = pBaseMtx44f->m[1][1];
-    matrix.m9 = pBaseMtx44f->m[1][2];
-    matrix.m13 = pBaseMtx44f->m[1][3];
-    matrix.m2 = pBaseMtx44f->m[2][0];
-    matrix.m6 = pBaseMtx44f->m[2][1];
-    matrix.m10 = pBaseMtx44f->m[2][2];
-    matrix.m14 = pBaseMtx44f->m[2][3];
-    matrix.m3 = pBaseMtx44f->m[3][0];
-    matrix.m7 = pBaseMtx44f->m[3][1];
-    matrix.m11 = pBaseMtx44f->m[3][2];
-    matrix.m15 = pBaseMtx44f->m[3][3];
+    matrix.m0 = pBaseMtx44f->m[0][0];  matrix.m4 = pBaseMtx44f->m[0][1];  matrix.m8 = pBaseMtx44f->m[0][2];  matrix.m12 = pBaseMtx44f->m[0][3];
+    matrix.m1 = pBaseMtx44f->m[1][0];  matrix.m5 = pBaseMtx44f->m[1][1];  matrix.m9 = pBaseMtx44f->m[1][2];  matrix.m13 = pBaseMtx44f->m[1][3];
+    matrix.m2 = pBaseMtx44f->m[2][0];  matrix.m6 = pBaseMtx44f->m[2][1];  matrix.m10 = pBaseMtx44f->m[2][2]; matrix.m14 = pBaseMtx44f->m[2][3];
+    matrix.m3 = pBaseMtx44f->m[3][0];  matrix.m7 = pBaseMtx44f->m[3][1];  matrix.m11 = pBaseMtx44f->m[3][2]; matrix.m15 = pBaseMtx44f->m[3][3];
 
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_MODEL], MatrixIdentity());
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_VIEW], MatrixIdentity());
@@ -808,7 +831,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
     SetShaderValue(self->shader, self->pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_MODE], &pDrawParam->modulateParam.mode, SHADER_UNIFORM_INT);
 
     // Set uniforms based on mode
-    switch (pDrawParam->modulateParam.mode) {
+    switch (pDrawParam->modulateParam.mode)
+    {
     case FFL_MODULATE_MODE_CONSTANT:
     case FFL_MODULATE_MODE_ALPHA:
     case FFL_MODULATE_MODE_LUMINANCE_ALPHA:
@@ -827,7 +851,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
     // Bind the texture if available
     if (pDrawParam->modulateParam.pTexture2D != NULL
         || pDrawParam->modulateParam.type == FFL_MODULATE_TYPE_SHAPE_FACELINE
-        || pDrawParam->modulateParam.type == FFL_MODULATE_TYPE_SHAPE_MASK) {
+        || pDrawParam->modulateParam.type == FFL_MODULATE_TYPE_SHAPE_MASK)
+    {
         GLuint textureHandle;
 
         // For faceline and mask (FFL should always bind a texture2D to this...)
@@ -855,7 +880,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
         glBindTexture(GL_TEXTURE_2D, textureHandle);
 
         // Set texture wrap to repeat
-        if (pDrawParam->modulateParam.type < FFL_MODULATE_TYPE_SHAPE_MAX) {
+        if (pDrawParam->modulateParam.type < FFL_MODULATE_TYPE_SHAPE_MAX)
+        {
             // Only apply texture wrap to shapes (glass, faceline)
             // since those are NPOT textures
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
@@ -880,24 +906,29 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
 
     // bind material uniforms
     if (pDrawParam->modulateParam.type < FFL_MODULATE_TYPE_SHAPE_MAX
-        && pDrawParam->modulateParam.type >= 0) {
+        && pDrawParam->modulateParam.type >= 0)
+    {
         const FFLiDefaultShaderMaterial* param = &cMaterialParam[pDrawParam->modulateParam.type];
         ShaderForFFL_SetMaterial(self, param);
     }
 
-    if (pDrawParam->primitiveParam.pIndexBuffer != NULL) {
+
+    if (pDrawParam->primitiveParam.pIndexBuffer != NULL)
+    {
         TraceLog(LOG_TRACE, "Binding index buffer: %p", pDrawParam->primitiveParam.pIndexBuffer);
         // Bind and set up vertex attributes
 #ifndef VAO_NOT_SUPPORTED
         glBindVertexArray(self->vaoHandle);
 #endif
 
-        for (int type = 0; type < FFL_ATTRIBUTE_BUFFER_TYPE_MAX; ++type) {
+        for (int type = 0; type < FFL_ATTRIBUTE_BUFFER_TYPE_MAX; ++type)
+        {
             const FFLAttributeBuffer* buffer = &pDrawParam->attributeBufferParam.attributeBuffers[type];
             int location = self->attributeLocation[type];
             void* ptr = buffer->ptr;
 
-            if (ptr != NULL && location != -1 && buffer->stride > 0) {
+            if (ptr != NULL && location != -1 && buffer->stride > 0)
+            {
                 unsigned int stride = buffer->stride;
                 unsigned int vbo_handle = self->vboHandle[type];
                 unsigned int size = buffer->size;
@@ -907,7 +938,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
                 glEnableVertexAttribArray(location);
 
                 // Set attribute pointer based on type
-                switch (type) {
+                switch (type)
+                {
                 case FFL_ATTRIBUTE_BUFFER_TYPE_POSITION:
                     glVertexAttribPointer(location, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
                     break;
@@ -931,7 +963,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
                 default:
                     break;
                 }
-            } else if (location != -1)
+            }
+            else if (location != -1)
                 glDisableVertexAttribArray(location);
         }
 
@@ -964,11 +997,12 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
     EndShaderMode();
 }
 
+
 FFLResourceDesc gResourceDesc; // Global so data can be freed
 
-const char* cFFLResourceHighFilename = "./FFLResHigh.dat";
-// const char* cFFLResourceHighFilename = "C:\\Users\\arko7939\\source\\repos\\FFL-Testing\\FFLResHigh.dat";
-// const char* cFFLResourceHighFilename = "/home/arian/Downloads/ffl/tools/AFLResHigh_2_3_LE.dat";
+//const char* cFFLResourceHighFilename = "./FFLResHigh.dat";
+const char* cFFLResourceHighFilename = "C:\\Users\\arko7939\\source\\repos\\FFL-Testing\\FFLResHigh.dat";
+//const char* cFFLResourceHighFilename = "/home/arian/Downloads/ffl/tools/AFLResHigh_2_3_LE.dat";
 
 // Calls FFLInitResEx and returns the result of FFLIsAvailable.
 FFLResult InitializeFFL()
@@ -994,7 +1028,8 @@ FFLResult InitializeFFL()
     fseek(file, 0, SEEK_END);
     unsigned long fileSize = ftell(file);
     fseek(file, 0, SEEK_SET); // Go back to the start of the file
-    if (fileSize <= 0) {
+    if (fileSize <= 0)
+    {
         TraceLog(LOG_ERROR, "Invalid file size for %s", cFFLResourceHighFilename);
         fclose(file);
         return FFL_RESULT_FS_ERROR;
@@ -1010,14 +1045,16 @@ FFLResult InitializeFFL()
     }
     */
     void* fileData = malloc((size_t)fileSize);
-    if (fileData == NULL) {
+    if (fileData == NULL)
+    {
         TraceLog(LOG_ERROR, "Cannot allocate memory for resource buffer");
         fclose(file);
         return FFL_RESULT_ERROR;
     }
     // Read the file data into fileData
     size_t bytesRead = fread(fileData, 1, (size_t)fileSize, file);
-    if (bytesRead == fileSize) {
+    if (bytesRead == fileSize)
+    {
         // Store the data and size in the appropriate resource type slot
         gResourceDesc.pData[FFL_RESOURCE_TYPE_HIGH] = fileData;
         gResourceDesc.size[FFL_RESOURCE_TYPE_HIGH] = (size_t)fileSize;
@@ -1033,10 +1070,11 @@ FFLResult InitializeFFL()
 
     FFLResult result;
     TraceLog(LOG_DEBUG, "Calling FFLInitResEx");
-    result = FFLInitRes(FFL_FONT_REGION_JP_US_EU, &gResourceDesc); // Ex(&initDesc, &gResourceDesc);
-    // FFLResult result = FFLInitResEx(&init_desc, NULL); // lets ffl find resources itself
+    result = FFLInitRes(FFL_FONT_REGION_JP_US_EU, &gResourceDesc);//Ex(&initDesc, &gResourceDesc);
+    //FFLResult result = FFLInitResEx(&init_desc, NULL); // lets ffl find resources itself
 
-    if (result != FFL_RESULT_OK) {
+    if (result != FFL_RESULT_OK)
+    {
         TraceLog(LOG_ERROR, "FFLInitResEx() failed with result: %d", (int)result);
         assert(false);
         return result;
@@ -1075,15 +1113,16 @@ FFLResult CreateCharModelFromStoreData(FFLCharModel* pCharModel, const void* pSt
         .index = 0,
     };
 
-    const u32 expressionFlag = (1 << FFL_EXPRESSION_NORMAL
-        | 1 << FFL_EXPRESSION_BLINK);
+    const u32 expressionFlag =
+                (1 << FFL_EXPRESSION_NORMAL
+               | 1 << FFL_EXPRESSION_BLINK);
 
     // const FFLExpressionFlag expressionFlag = 1 << FFL_EXPRESSION_PUZZLED;
 
     FFLCharModelDesc modelDesc = {
         .resolution = (FFLResolution)512,
         .expressionFlag = expressionFlag,
-        .modelFlag = FFL_MODEL_FLAG_NORMAL, // FFL_MODEL_FLAG_FACE_ONLY,
+        .modelFlag = FFL_MODEL_FLAG_NORMAL, //FFL_MODEL_FLAG_FACE_ONLY,
         .resourceType = FFL_RESOURCE_TYPE_HIGH
     };
 
@@ -1092,7 +1131,8 @@ FFLResult CreateCharModelFromStoreData(FFLCharModel* pCharModel, const void* pSt
     TraceLog(LOG_DEBUG, "Calling FFLInitCharModelCPUStep");
     result = FFLInitCharModelCPUStep(pCharModel, &modelSource, &modelDesc);
 
-    if (result != FFL_RESULT_OK) {
+    if (result != FFL_RESULT_OK)
+    {
         TraceLog(LOG_ERROR, "FFLInitCharModelCPUStep failed with result: %d", result);
         return result;
     }
@@ -1190,7 +1230,8 @@ void InitCharModelTextures(FFLCharModel* pCharModel)
 
     // NOTE: LOOP BEGINS HERE
     u32 lExpressionFlag = piCharModel->charModelDesc.expressionFlag;
-    for (u32 i = 0; lExpressionFlag != 0; i++, lExpressionFlag >>= 1) {
+    for (u32 i = 0; lExpressionFlag != 0; i++, lExpressionFlag >>= 1)
+    {
         if ((lExpressionFlag & 1) == 0)
             // pMaskTextures->pRenderTextures[i] = NULL;
             continue;
@@ -1270,9 +1311,9 @@ void CalculateVariableIconBodyScaleFactors(Vector3* scale, float build, float he
     // ScaleApply?
     // 0.47 / 128.0 = 0.003671875
     scale->x = (build * (height * 0.003671875f + 0.4f)) / 128.0f +
-        // 0.23 / 128.0 = 0.001796875
-        height * 0.001796875f + 0.4f;
-    // 0.77 / 128.0 = 0.006015625
+                // 0.23 / 128.0 = 0.001796875
+                height * 0.001796875f + 0.4f;
+                // 0.77 / 128.0 = 0.006015625
     scale->y = (height * 0.006015625f) + 0.5f;
 
     scale->z = scale->y;
@@ -1311,7 +1352,8 @@ void UpdateScaleForFFLBodyModel(Vector3* scale, VriableIconBodyBoneKind boneInde
     Vector3 scaleFactors)
 
 {
-    switch (boneIndex) {
+    switch (boneIndex)
+    {
     case all_root:
     case body:
     case skl_root:
@@ -1400,22 +1442,25 @@ int parentBoneTable[] = {
 
 void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int frame, Vector3 scaleFactors)
 {
-    if ((anim.frameCount > 0) && (anim.bones != NULL) && (anim.framePoses != NULL)) {
+    if ((anim.frameCount > 0) && (anim.bones != NULL) && (anim.framePoses != NULL))
+    {
         if (frame >= anim.frameCount)
             frame = frame % anim.frameCount;
 
-        for (int i = 0; i < model.meshCount; i++) {
-            if (model.meshes[i].boneMatrices) {
+        for (int i = 0; i < model.meshCount; i++)
+        {
+            if (model.meshes[i].boneMatrices)
+            {
                 assert(model.meshes[i].boneCount == anim.boneCount);
 
-                for (int boneId = 0; boneId < model.meshes[i].boneCount; boneId++) {
+                for (int boneId = 0; boneId < model.meshes[i].boneCount; boneId++)
+                {
                     bool scaleEnable = boneId > 2; // chest
                     Vector3 scaleForBone;
-                    if (scaleEnable) {
+                    if (scaleEnable)
                         UpdateScaleForFFLBodyModel(&scaleForBone,
                             (VriableIconBodyBoneKind)boneId,
                             scaleFactors);
-                    }
 
                     Vector3 inTranslation = model.bindPose[boneId].translation;
                     Quaternion inRotation = model.bindPose[boneId].rotation;
@@ -1466,12 +1511,11 @@ void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int fr
                         MatrixScale(boneScale.x, boneScale.y, boneScale.z));
                     /*
                     int parentBoneId = parentBoneTable[boneId];
-                    if (parentBoneId == 0xFFFF) {
+                    if (parentBoneId == 0xFFFF)
                         // This is a root bone
                         model.meshes[i].boneMatrices[boneId] = boneMatrix;
-                    } else {
+                    else
                         model.meshes[i].boneMatrices[boneId] = MatrixMultiply(model.meshes[i].boneMatrices[parentBoneId], boneMatrix);
-                    }
                     */
 
                     model.meshes[i].boneMatrices[boneId] = boneMatrix;
@@ -1515,8 +1559,9 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
 
     // Determine OpenGL format based on FFLTextureInfo format
     GLenum internalFormat, format, type;
-    switch (pTextureInfo->format) {
-    case FFL_TEXTURE_FORMAT_R8:
+    switch (pTextureInfo->format)
+    {
+    case FFL_TEXTURE_FORMAT_R8_UNORM:
 #ifdef VAO_NOT_SUPPORTED // GL ES 2.0 compatible types
         internalFormat = GL_LUMINANCE;
         format = GL_LUMINANCE;
@@ -1526,7 +1571,7 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
 #endif // VAO_NOT_SUPPORTED
         type = GL_UNSIGNED_BYTE;
         break;
-    case FFL_TEXTURE_FORMAT_RG8:
+    case FFL_TEXTURE_FORMAT_R8_G8_UNORM:
 #ifdef VAO_NOT_SUPPORTED // GL ES 2.0 compatible types
         internalFormat = GL_LUMINANCE_ALPHA;
         format = GL_LUMINANCE_ALPHA;
@@ -1536,7 +1581,7 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
 #endif // VAO_NOT_SUPPORTED
         type = GL_UNSIGNED_BYTE;
         break;
-    case FFL_TEXTURE_FORMAT_RGBA8:
+    case FFL_TEXTURE_FORMAT_R8_G8_B8_A8_UNORM:
         internalFormat = GL_RGBA;
         format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
@@ -1661,7 +1706,8 @@ int main(void)
 
     FFLCharModel charModel;
     bool isFFLModelCreated = false;
-    if (isFFLAvailable) {
+    if (isFFLAvailable)
+    {
         TraceLog(LOG_DEBUG, "Creating FFLCharModel at %p", &charModel);
         isFFLModelCreated = CreateCharModelFromStoreData(&charModel, (const void*)(&cJasmineStoreData)) == FFL_RESULT_OK;
         if (isFFLModelCreated)
@@ -1692,18 +1738,19 @@ int main(void)
     Matrix matBodyScale = MatrixScale(vecBodyScaleConst.x, vecBodyScaleConst.y, vecBodyScaleConst.z);
     Model model = LoadModel(modelPath);
     Model acceModel = LoadModel("cat ear.glb"); // LoadModel("/dev/shm/bear.glb");;
-    if (model.meshes == NULL) {
+    if (model.meshes == NULL)
         TraceLog(LOG_DEBUG, "Body model failed to load, not going to attempt drawing it.");
-    }
-    if (acceModel.meshes == NULL) {
+    if (acceModel.meshes == NULL)
         TraceLog(LOG_DEBUG, "Accessory model also failed to load.");
-    }
 
-    if (gShaderForFFL.shader.locs != NULL) {
-        for (int j = 0; j < model.materialCount; j++) {
+    if (gShaderForFFL.shader.locs != NULL)
+    {
+        for (int j = 0; j < model.materialCount; j++)
+        {
             model.materials[j].shader = gShaderForFFL.shader;
         }
-        for (int j = 0; j < acceModel.materialCount; j++) {
+        for (int j = 0; j < acceModel.materialCount; j++)
+        {
             acceModel.materials[j].shader = gShaderForFFL.shader;
         }
     }
@@ -1733,9 +1780,10 @@ int main(void)
     FFLPartsTransform partsTransform;
     Matrix acceMatrix;
     Matrix acceMatrixRight;
-    if (isFFLModelCreated) {
+    if (isFFLModelCreated)
+    {
         FFLGetPartsTransform(&partsTransform, &charModel);
-        // acceMatrix = MatrixTranslate(partsTransform.hatTranslate.x, partsTransform.hatTranslate.y, partsTransform.hatTranslate.z);
+        //acceMatrix = MatrixTranslate(partsTransform.hatTranslate.x, partsTransform.hatTranslate.y, partsTransform.hatTranslate.z);
         Matrix acceSideTranslate = MatrixTranslate(partsTransform.headSideTranslate.x, partsTransform.headSideTranslate.y, partsTransform.headSideTranslate.z);
         Matrix acceSideTranslateRight = MatrixTranslate(-partsTransform.headSideTranslate.x, partsTransform.headSideTranslate.y, partsTransform.headSideTranslate.z);
         Matrix acceSideRotate = MatrixRotateXYZ((Vector3) { partsTransform.headSideRotate.x, partsTransform.headSideRotate.y, partsTransform.headSideRotate.z });
@@ -1745,9 +1793,8 @@ int main(void)
         acceMatrixRight = MatrixMultiply(acceSideRotateRight, acceSideTranslateRight);
 
         int iHeight, iBuild;
-        iHeight = 1;
-        iBuild = 1; // NOTE: FOR DEBUG
-        // GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
+        iHeight = 1; iBuild = 1; // NOTE: FOR DEBUG
+        //GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
 
         CalculateVariableIconBodyScaleFactors(&modelFFLBodyScaleFactors, (float)iBuild, (float)iHeight);
         TraceLog(LOG_DEBUG, "Body scale factors: X %f, Y %f", modelFFLBodyScaleFactors.x, modelFFLBodyScaleFactors.y, modelFFLBodyScaleFactors.z);
@@ -1765,7 +1812,7 @@ int main(void)
 #endif
 
     // Main game loop
-    while (!WindowShouldClose()) // Detect window close button or ESC key
+    while (!WindowShouldClose())    // Detect window close button or ESC key
     {
 #ifndef NO_MODELS_FOR_TEST
         UpdateCamera(&camera, CAMERA_FIRST_PERSON);
@@ -1795,7 +1842,8 @@ int main(void)
         ModelAnimation anim;
         Matrix headBoneMatrix;
         Matrix headModelMatrix;
-        if (modelAnimations != NULL) {
+        if (modelAnimations != NULL)
+        {
             anim = modelAnimations[animIndex];
             animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
             MyUpdateModelAnimationBoneMatrices(model, anim, animCurrentFrame, modelFFLBodyScaleFactors);
@@ -1803,12 +1851,15 @@ int main(void)
             headBoneMatrix = model.meshes[0].boneMatrices[14];
 
             headModelMatrix = MatrixMultiply(headBoneMatrix, matBodyScale);
-        } else {
+        }
+        else
+        {
             headBoneMatrix = MatrixIdentity();
             headModelMatrix = MatrixIdentity();
         }
 
-        // int boneId = ((int)rotationAngle / 20 ) % model.boneCount; // head??
+
+        //int boneId = ((int)rotationAngle / 20 ) % model.boneCount; // head??
         /*
         const int boneId = 14; // think this is head
 
@@ -1859,7 +1910,8 @@ int main(void)
         DrawCubeWiresV((Vector3){ 0.0f, 0.0f, 0.0f }, (Vector3){ 2.0f, 2.0f, 2.0f }, MAROON);
         */
 
-        if (model.meshes != NULL) {
+        if (model.meshes != NULL)
+        {
 
             ShaderForFFL_Bind(&gShaderForFFL, false);
             const int one = 1;
@@ -1873,7 +1925,9 @@ int main(void)
                 {
                     ShaderForFFL_SetMaterial(&gShaderForFFL, &cMaterialParam[MATERIAL_PARAM_PANTS]);
                     SetShaderValue(gShaderForFFL.shader, gShaderForFFL.pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_CONST1], &pantsColor, SHADER_UNIFORM_VEC3);
-                } else {
+                }
+                else
+                {
                     ShaderForFFL_SetMaterial(&gShaderForFFL, &cMaterialParam[MATERIAL_PARAM_BODY]);
                     SetShaderValue(gShaderForFFL.shader, gShaderForFFL.pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_CONST1], &bodyColor, SHADER_UNIFORM_VEC3);
                 }
@@ -1952,7 +2006,8 @@ int main(void)
         UnloadModel(acceModel);
 #endif
 
-    if (isFFLModelCreated) {
+    if (isFFLModelCreated)
+    {
         TraceLog(LOG_DEBUG, "FFLDeleteCharModel(%p)", &charModel);
         FFLDeleteCharModel(&charModel);
         // FFLCharModel destruction must happen before FFLExit, and before GL context is closed
@@ -1977,7 +2032,7 @@ const float cBlinkDuration = 0.08f; // 80ms
 
 void UpdateCharModelBlink(bool* isBlinking, double* lastBlinkTime, FFLCharModel* pCharModel, FFLExpression initialExpression, double now)
 {
-    // double now = GetTime();
+    //double now = GetTime();
     double timeSinceLastBlink = now - *lastBlinkTime;
 
     // Check if it's time to blink (every 3 seconds = 3000 ms)

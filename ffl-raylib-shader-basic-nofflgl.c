@@ -849,7 +849,7 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
     GLenum internalFormat, format, type;
     switch (pTextureInfo->format)
     {
-        case FFL_TEXTURE_FORMAT_R8:
+        case FFL_TEXTURE_FORMAT_R8_UNORM:
 #ifdef VAO_NOT_SUPPORTED // GL ES 2.0 compatible types
             internalFormat = GL_LUMINANCE;
             format = GL_LUMINANCE;
@@ -859,7 +859,7 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
 #endif // VAO_NOT_SUPPORTED
             type = GL_UNSIGNED_BYTE;
             break;
-        case FFL_TEXTURE_FORMAT_RG8:
+        case FFL_TEXTURE_FORMAT_R8_G8_UNORM:
 #ifdef VAO_NOT_SUPPORTED // GL ES 2.0 compatible types
             internalFormat = GL_LUMINANCE_ALPHA;
             format = GL_LUMINANCE_ALPHA;
@@ -869,7 +869,7 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
 #endif // VAO_NOT_SUPPORTED
             type = GL_UNSIGNED_BYTE;
             break;
-        case FFL_TEXTURE_FORMAT_RGBA8:
+        case FFL_TEXTURE_FORMAT_R8_G8_B8_A8_UNORM:
             internalFormat = GL_RGBA;
             format = GL_RGBA;
             type = GL_UNSIGNED_BYTE;
