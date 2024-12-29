@@ -18,15 +18,20 @@ This repo contains:
 
 * ffl-raylib-shader-basic
 
-(TBD)
+<img src="https://github.com/user-attachments/assets/694be992-2566-44e1-b266-560261563853" height="500">
 
 * ffl-raylib-shader-fflshader
 
-(TBD)
+<img src="https://github.com/user-attachments/assets/28901ea2-4e20-49c6-9fdb-a18cbd67e980" height="500">
+
+### On WebGL 1.0:
+
+<img src="https://github.com/user-attachments/assets/f6042c2e-4216-4c97-be98-e74b8c7d95f0" height="500">
+
 
 * ffl-raylib-shader-fflshader with body
 
-(TBD)
+<img src="https://github.com/user-attachments/assets/eaf4c7d2-0d5c-4afb-a762-4eac0a3bc36d" height="500">
 
 ## Building
 Don't have good instructions right now. Sorry.
@@ -100,6 +105,8 @@ ffl-raylib-shader-fflshader-nofflgl.c ~/Downloads/build/ffl-build-glad/rio-ffl-g
   - Really this is needed for alllllllll projects: ffl, rio, FFL-Testing.....
 
 * Unify the nofflgl and standard versions
+  - And in general bring all code shared in common with all files, up to date with each other.
+    * Should that code be in a shared header?
   - Actually... you know you can build nofflgl and it will still work on regular gl target right...>???????
 * Read in an ffsd from argv for testing
   - More testing is needed for other Miis to begin with....
