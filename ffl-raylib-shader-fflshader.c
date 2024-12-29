@@ -1355,12 +1355,12 @@ int main(void)
 
 #ifndef NO_MODELS_FOR_TEST
     // Load body model
-    const char* modelPath = "/home/arian/Downloads/big/miibodymiddle tstste.glb";
+    const char* modelPath = "models/miibodymiddle female test.glb";
     const float bodyScale = 0.7f;
-    const Vector3 vecBodyScaleConst = (Vector3){ bodyScale, bodyScale, bodyScale };
+    const Vector3 vecBodyScaleConst = (Vector3) { bodyScale, bodyScale, bodyScale };
     Matrix matBodyScale = MatrixScale(vecBodyScaleConst.x, vecBodyScaleConst.y, vecBodyScaleConst.z);
     Model model = LoadModel(modelPath);
-    Model acceModel = LoadModel("/home/arian/Downloads/big/cat ear.glb");//LoadModel("/dev/shm/bear.glb");
+    Model acceModel = LoadModel("models/cat ear.glb"); // LoadModel("models/bear.glb");;
 
     if (gShaderForFFL.shader.locs != NULL)
     {

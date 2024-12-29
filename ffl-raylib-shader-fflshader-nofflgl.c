@@ -1000,8 +1000,8 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
 
 FFLResourceDesc gResourceDesc; // Global so data can be freed
 
-//const char* cFFLResourceHighFilename = "./FFLResHigh.dat";
-const char* cFFLResourceHighFilename = "C:\\Users\\arko7939\\source\\repos\\FFL-Testing\\FFLResHigh.dat";
+const char* cFFLResourceHighFilename = "./FFLResHigh.dat";
+//const char* cFFLResourceHighFilename = "C:\\Users\\arko7939\\source\\repos\\FFL-Testing\\FFLResHigh.dat";
 //const char* cFFLResourceHighFilename = "/home/arian/Downloads/ffl/tools/AFLResHigh_2_3_LE.dat";
 
 // Calls FFLInitResEx and returns the result of FFLIsAvailable.
@@ -1464,59 +1464,27 @@ void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int fr
 
                     Vector3 inTranslation = model.bindPose[boneId].translation;
                     Quaternion inRotation = model.bindPose[boneId].rotation;
-                    Vector3 inScale /*Pre*/ = model.bindPose[boneId].scale;
-                    /*
-                                        Vector3 inScale;
-                                        if (scaleEnable)
-                                            inScalePre = Vector3Multiply(inScale, scaleForBone);
-                                        else
-                                            inScale = inScalePre;
-                    */
+                    Vector3 inScale = model.bindPose[boneId].scale;
+
                     Vector3 outTranslation = anim.framePoses[frame][boneId].translation;
                     Quaternion outRotation = anim.framePoses[frame][boneId].rotation;
-                    Vector3 outScale /*Pre*/ = anim.framePoses[frame][boneId].scale;
-                    /*
-                                        Vector3 outScale;
-                                        if (scaleEnable)
-                                            outScale = Vector3Multiply(outScalePre, scaleForBone);
-                                        else
-                                            outScale = outScalePre;
-                    */
+                    Vector3 outScale = anim.framePoses[frame][boneId].scale;
+
                     Vector3 invTranslation = Vector3RotateByQuaternion(Vector3Negate(inTranslation), QuaternionInvert(inRotation));
                     Quaternion invRotation = QuaternionInvert(inRotation);
-                    Vector3 invScale /*Pre*/ = Vector3Divide((Vector3) { 1.0f, 1.0f, 1.0f }, inScale);
-                    /*
-                                        Vector3 invScale;
-                                        if (scaleEnable)
-                                            invScalePre = Vector3Multiply(invScale, scaleForBone);
-                                        else
-                                            invScale = invScalePre;
-                    */
+                    Vector3 invScale = Vector3Divide((Vector3) { 1.0f, 1.0f, 1.0f }, inScale);
+
                     Vector3 boneTranslation = Vector3Add(
                         Vector3RotateByQuaternion(Vector3Multiply(outScale, invTranslation),
                             outRotation),
                         outTranslation);
                     Quaternion boneRotation = QuaternionMultiply(outRotation, invRotation);
-                    Vector3 boneScalePre = Vector3Multiply(outScale, invScale);
-
-                    Vector3 boneScale;
-                    if (scaleEnable)
-                        boneScale = Vector3Multiply(boneScalePre, scaleForBone);
-                    else
-                        boneScale = boneScalePre;
+                    Vector3 boneScale = Vector3Multiply(outScale, invScale);
 
                     Matrix boneMatrix = MatrixMultiply(MatrixMultiply(
                                                            QuaternionToMatrix(boneRotation),
                                                            MatrixTranslate(boneTranslation.x, boneTranslation.y, boneTranslation.z)),
                         MatrixScale(boneScale.x, boneScale.y, boneScale.z));
-                    /*
-                    int parentBoneId = parentBoneTable[boneId];
-                    if (parentBoneId == 0xFFFF)
-                        // This is a root bone
-                        model.meshes[i].boneMatrices[boneId] = boneMatrix;
-                    else
-                        model.meshes[i].boneMatrices[boneId] = MatrixMultiply(model.meshes[i].boneMatrices[parentBoneId], boneMatrix);
-                    */
 
                     model.meshes[i].boneMatrices[boneId] = boneMatrix;
                 }
@@ -1732,12 +1700,12 @@ int main(void)
 
 #ifndef NO_MODELS_FOR_TEST
     // Load body model
-    const char* modelPath = "miibodymiddle tstste.glb";
+    const char* modelPath = "models/miibodymiddle female test.glb";
     const float bodyScale = 0.7f;
     const Vector3 vecBodyScaleConst = (Vector3) { bodyScale, bodyScale, bodyScale };
     Matrix matBodyScale = MatrixScale(vecBodyScaleConst.x, vecBodyScaleConst.y, vecBodyScaleConst.z);
     Model model = LoadModel(modelPath);
-    Model acceModel = LoadModel("cat ear.glb"); // LoadModel("/dev/shm/bear.glb");;
+    Model acceModel = LoadModel("models/cat ear.glb"); // LoadModel("models/bear.glb");;
     if (model.meshes == NULL)
         TraceLog(LOG_DEBUG, "Body model failed to load, not going to attempt drawing it.");
     if (acceModel.meshes == NULL)

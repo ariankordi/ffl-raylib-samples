@@ -31,7 +31,7 @@
 #else   // PLATFORM_ANDROID, PLATFORM_WEB
 
     // HACK: ONLY FOR CLANGD
-    #include "glad/gles2.h"
+    //#include "glad/gles2.h"
 
     #define VAO_NOT_SUPPORTED
     #define GLSL_VERSION            100
@@ -823,9 +823,9 @@ void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLText
 */
 
     // Log the FFLTextureInfo details
-    TraceLog(LOG_DEBUG, "CreateTexture: FFLTextureInfo { width: %d, height: %d, format: %d, size: %d, numMips: %d, imagePtr: %p, mipPtr: %p }",
-             pTextureInfo->width, pTextureInfo->height, pTextureInfo->format, pTextureInfo->size,
-             pTextureInfo->numMips, pTextureInfo->imagePtr, pTextureInfo->mipPtr);
+    TraceLog(LOG_DEBUG, "CreateTexture: FFLTextureInfo { width: %d, height: %d, format: %d, imageSize: %d, mipCount: %d, imagePtr: %p, mipPtr: %p }",
+             pTextureInfo->width, pTextureInfo->height, pTextureInfo->format, pTextureInfo->imageSize,
+             pTextureInfo->mipSize, pTextureInfo->imagePtr, pTextureInfo->mipPtr);
 
     // Allocate memory for the OpenGL texture handle
     /*
