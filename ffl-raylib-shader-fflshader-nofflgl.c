@@ -209,7 +209,15 @@ const char* vertexShaderCodeFFL = GLSL_VERT(
         //{
             mat3 normalMatrix = transpose(inverse(mat3(mv)));
             normal = normalize(normalMatrix * normal);
-            tangent = normalize(normalMatrix * tangent);
+            // safe normalize
+            if (tangent.xyz != vec3(0.0, 0.0, 0.0))
+            {
+                tangent = normalize(normalMatrix * tangent);
+            }
+            else
+            {
+                tangent = vec3(0.0, 0.0, 0.0);
+            }
         //}
 
         v_normal = normal;
@@ -1412,33 +1420,6 @@ void UpdateScaleForFFLBodyModel(Vector3* scale, VriableIconBodyBoneKind boneInde
     return;
 }
 
-int parentBoneTable[] = {
-    0xFFFF, // all_root
-    0, // body
-    0, // skl_root
-    2, // chest
-    3, // arm_l1
-    4, // arm_l2
-    5, // wrist_l
-    4, // elbow_l
-    4, // shoulder_l
-    3, // arm_r1
-    9, // arm_r2
-    10, // wrist_r
-    9, // elbow_r
-    9, // shoulder_r
-    3, // head
-    2, // chest_2
-    2, // hip
-    16, // foot_l1
-    17, // foot_l2
-    18, // ankle_l
-    17, // knee_l
-    16, // foot_r1
-    21, // foot_r2
-    22, // ankle_r
-    21 // knee_r
-};
 
 void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int frame, Vector3 scaleFactors)
 {
@@ -1494,6 +1475,8 @@ void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int fr
 }
 
 void UpdateCharModelBlink(bool* isBlinking, double* lastBlinkTime, FFLCharModel* pCharModel, FFLExpression initialExpression, double now);
+
+#ifdef FFL_USE_TEXTURE_CALLBACK
 
 void TextureCallback_Create(void* v, const FFLTextureInfo* pTextureInfo, FFLTexture* pTexture)
 {
@@ -1631,6 +1614,28 @@ void TextureCallback_Delete(void* v, FFLTexture* pTexture)
     *(void**)pTexture = (void*)NULL;
 }
 
+#endif // FFL_USE_TEXTURE_CALLBACK
+
+
+void TextureCallback_CreateNull(void* v, const FFLTextureInfo* pTextureInfo, FFLTexture* pTexture)
+{
+
+    // Log the FFLTextureInfo details
+    TraceLog(LOG_DEBUG, "CreateTexture NULL!!!!!: FFLTextureInfo { width: %d, height: %d, format: %d, imageSize: %d, mipCount: %d, imagePtr: %p, mipPtr: %p }",
+        pTextureInfo->width, pTextureInfo->height, pTextureInfo->format, pTextureInfo->imageSize,
+        pTextureInfo->mipCount, pTextureInfo->imagePtr, pTextureInfo->mipPtr);
+}
+
+FFLTextureCallback gTextureCallback;
+
+void SetNullTextureCallback()
+{
+    gTextureCallback.useOriginalTileMode = false;
+    gTextureCallback.pCreateFunc = TextureCallback_CreateNull;
+    gTextureCallback.pDeleteFunc = NULL; // textures wont be deleted
+    FFLSetTextureCallback(&gTextureCallback);
+}
+
 int main(void)
 {
     SetTraceLogLevel(LOG_DEBUG);
@@ -1656,13 +1661,11 @@ int main(void)
     TraceLog(LOG_DEBUG, "Calling ShaderForFFL_Initialize(%p)", &gShaderForFFL);
     ShaderForFFL_Initialize(&gShaderForFFL);
 
+    gTextureCallback.useOriginalTileMode = false;
 #ifdef FFL_USE_TEXTURE_CALLBACK
-    FFLTextureCallback textureCallback = {
-        .useOriginalTileMode = false,
-        .pCreateFunc = TextureCallback_Create,
-        .pDeleteFunc = TextureCallback_Delete
-    };
-    FFLSetTextureCallback(&textureCallback);
+    gTextureCallback.pCreateFunc = TextureCallback_Create;
+    gTextureCallback.pDeleteFunc = TextureCallback_Delete;
+    FFLSetTextureCallback(&gTextureCallback);
 #endif // FFL_USE_TEXTURE_CALLBACK
 
     // custom FFL function that flips Y for mask/faceline (ASSUMES default gl clip control...)
