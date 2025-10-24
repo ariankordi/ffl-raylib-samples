@@ -1065,7 +1065,7 @@ FFLResult InitializeFFL()
     {
         // Store the data and size in the appropriate resource type slot
         gResourceDesc.pData[FFL_RESOURCE_TYPE_HIGH] = fileData;
-        gResourceDesc.size[FFL_RESOURCE_TYPE_HIGH] = (size_t)fileSize;
+        gResourceDesc.size[FFL_RESOURCE_TYPE_HIGH] = (u32)fileSize;
     } else {
         TraceLog(LOG_ERROR, "Cannot read file %s", cFFLResourceHighFilename);
         free(fileData);
@@ -1097,9 +1097,9 @@ FFLResult InitializeFFL()
     return result;
 }
 
-const unsigned char cJasmineStoreData[96] = {
-    0x03, 0x00, 0x00, 0x40, 0xA0, 0x41, 0x38, 0xC4, 0xA0, 0x84, 0x00, 0x00, 0xDB, 0xB8, 0x87, 0x31, 0xBE, 0x60, 0x2B, 0x2A, 0x2A, 0x42, 0x00, 0x00, 0x59, 0x2D, 0x4A, 0x00, 0x61, 0x00, 0x73, 0x00, 0x6D, 0x00, 0x69, 0x00, 0x6E, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x37, 0x12, 0x10, 0x7B, 0x01, 0x21, 0x6E, 0x43, 0x1C, 0x0D, 0x64, 0xC7, 0x18, 0x00, 0x08, 0x1E, 0x82, 0x0D, 0x00, 0x30, 0x41, 0xB3, 0x5B, 0x82, 0x6D, 0x00, 0x00, 0x6F, 0x00, 0x73, 0x00, 0x69, 0x00, 0x67, 0x00, 0x6F, 0x00, 0x6E, 0x00, 0x61, 0x00, 0x6C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0x3A
-};
+const unsigned char cJasmineStoreData[96] = { 0x03, 0x00, 0x00, 0x40, 0xA0, 0x41, 0x38, 0xC4, 0xA0, 0x84, 0x00, 0x00, 0xDB, 0xB8, 0x87, 0x31, 0xBE, 0x60, 0x2B, 0x2A, 0x2A, 0x42, 0x00, 0x00, 0x59, 0x2D, 0x4A, 0x00, 0x61, 0x00, 0x73, 0x00, 0x6D, 0x00, 0x69, 0x00, 0x6E, 0x00, 0x65, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x37, 0x12, 0x10, 0x7B, 0x01, 0x21, 0x6E, 0x43, 0x1C, 0x0D, 0x64, 0xC7, 0x18, 0x00, 0x08, 0x1E, 0x82, 0x0D, 0x00, 0x30, 0x41, 0xB3, 0x5B, 0x82, 0x6D, 0x00, 0x00, 0x6F, 0x00, 0x73, 0x00, 0x69, 0x00, 0x67, 0x00, 0x6F, 0x00, 0x6E, 0x00, 0x61, 0x00, 0x6C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0x3A};
+// https://bits.ondrovo.com/hexc.html
+const unsigned char cBlancoStoreData[96] = { 0x03, 0x00, 0x00, 0x40, 0x64, 0x34, 0x3a, 0x58, 0x80, 0x27, 0x86, 0x4b, 0xd7, 0x1f, 0x33, 0x18, 0xed, 0x56, 0x69, 0x2d, 0x0c, 0x3d, 0x00, 0x00, 0x01, 0x28, 0x62, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x6e, 0x00, 0x63, 0x00, 0x6f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x00, 0x12, 0x10, 0x7b, 0x04, 0x5c, 0x6e, 0x44, 0x1c, 0x8d, 0x64, 0xc7, 0x18, 0x00, 0x08, 0x19, 0x24, 0x0d, 0x00, 0x20, 0x41, 0xb3, 0x5b, 0x83, 0x5d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xb8, 0xc9 };
 
 // forward decls
 void ExitFFL();
@@ -1313,7 +1313,7 @@ void GetHeightAndBuildFromFFLCharModel(FFLCharModel* pCharModel, int* height, in
 
 // referenced in anonymous function in nn::mii::detail::VariableIconBodyImpl::CalculateWorldMatrix
 // also in ffl_app.rpx: FUN_020ec380 (FFLUtility), FUN_020737b8 (mii maker US)
-void CalculateVariableIconBodyScaleFactors(Vector3* scale, float build, float height)
+void CalculateBodyScale(Vector3* scale, float build, float height)
 
 {
     // ScaleApply?
@@ -1327,150 +1327,176 @@ void CalculateVariableIconBodyScaleFactors(Vector3* scale, float build, float he
     scale->z = scale->y;
 }
 
-typedef enum VriableIconBodyBoneKind {
-    all_root = 0,
-    body = 1,
-    skl_root = 2,
-    chest = 3,
-    arm_l1 = 4,
-    arm_l2 = 5,
-    wrist_l = 6,
-    elbow_l = 7,
-    shoulder_l = 8,
-    arm_r1 = 9,
-    arm_r2 = 10,
-    wrist_r = 11,
-    elbow_r = 12,
-    shoulder_r = 13,
-    head = 14,
-    chest_2 = 15,
-    hip = 16,
-    foot_l1 = 17,
-    foot_l2 = 18,
-    ankle_l = 19,
-    knee_l = 20,
-    foot_r1 = 21,
-    foot_r2 = 22,
-    ankle_r = 23,
-    knee_r = 24,
-    BoneKind_End = 25
+// Note that these are the same bones
+// between the Switch MiiBodyHigh model
+// and the Wii U MiiBodyMiddle model.
+typedef enum VriableIconBodyBoneKind
+{
+    VriableIconBodyBoneKind_AllRoot   = 0,
+    VriableIconBodyBoneKind_Body      = 1,
+    VriableIconBodyBoneKind_SklRoot   = 2,
+    VriableIconBodyBoneKind_Chest     = 3,
+    VriableIconBodyBoneKind_ArmL1     = 4,
+    VriableIconBodyBoneKind_ArmL2     = 5,
+    VriableIconBodyBoneKind_WristL    = 6,
+    VriableIconBodyBoneKind_ElbowL    = 7,
+    VriableIconBodyBoneKind_ShoulderL = 8,
+    VriableIconBodyBoneKind_ArmR1     = 9,
+    VriableIconBodyBoneKind_ArmR2     = 10,
+    VriableIconBodyBoneKind_WristR    = 11,
+    VriableIconBodyBoneKind_ElbowR    = 12,
+    VriableIconBodyBoneKind_ShoulderR = 13,
+    VriableIconBodyBoneKind_Head      = 14,
+    VriableIconBodyBoneKind_Chest2    = 15,
+    VriableIconBodyBoneKind_Hip       = 16,
+    VriableIconBodyBoneKind_FootL1    = 17,
+    VriableIconBodyBoneKind_FootL2    = 18,
+    VriableIconBodyBoneKind_AnkleL    = 19,
+    VriableIconBodyBoneKind_KneeL     = 20,
+    VriableIconBodyBoneKind_FootR1    = 21,
+    VriableIconBodyBoneKind_FootR2    = 22,
+    VriableIconBodyBoneKind_AnkleR    = 23,
+    VriableIconBodyBoneKind_KneeR     = 24,
+    VriableIconBodyBoneKind_End       = 25
 } VriableIconBodyBoneKind;
 
-void UpdateScaleForFFLBodyModel(Vector3* scale, VriableIconBodyBoneKind boneIndex,
-    Vector3 scaleFactors)
 
+// void nn::mii::detail::`anonymous namespace'::UpdateScale(class nn::util::Vector3f *, enum nn::mii::detail::VriableIconBodyBoneKind, struct nn::util::Float3 const &)
+void UpdateScaleForFFLBodyModel(Vector3* scaleOut, VriableIconBodyBoneKind bone, Vector3* bodyScale)
 {
-    switch (boneIndex)
+    // miibodylow "3ds":
+    //bone = static_cast<VriableIconBodyBoneKind>(bone + 1);
+    switch (bone)
     {
-    case all_root:
-    case body:
-    case skl_root:
-        /*
-        // uuusuallly they are not done for theeseee
-        assert(false && "skip these bones, do body and onwards");
-        scale->x = 1.0f;
-        scale->y = 1.0f;
-        scale->z = 1.0f;
-        // above lines are added by MEEEEE
+    case VriableIconBodyBoneKind_AllRoot:
+    case VriableIconBodyBoneKind_Body:
+    case VriableIconBodyBoneKind_SklRoot:
+        // Do not update scale.mSkeletonMatrix
         break;
-        */
-    case chest:
-    case chest_2:
-    case hip:
-    case foot_l1:
-    case foot_l2:
-    case foot_r1:
-    case foot_r2:
-        scale->x = scaleFactors.x;
-        scale->y = scaleFactors.y;
-        scale->z = scaleFactors.z;
+    case VriableIconBodyBoneKind_Chest:
+    case VriableIconBodyBoneKind_Chest2:
+    case VriableIconBodyBoneKind_Hip:
+    case VriableIconBodyBoneKind_FootL1:
+    case VriableIconBodyBoneKind_FootL2:
+    case VriableIconBodyBoneKind_FootR1:
+    case VriableIconBodyBoneKind_FootR2:
+        // Chest, Hip, Foot: XYZ
+        // Includes entire body except
+        // for entire arms/hands and shoes.
+        scaleOut->x = bodyScale->x;
+        scaleOut->y = bodyScale->y;
+        scaleOut->z = bodyScale->z;
         break;
-    case arm_l1:
-    case arm_l2:
-    case elbow_l:
-    case arm_r1:
-    case arm_r2:
-    case elbow_r:
-        scale->x = scaleFactors.y;
-        scale->y = scaleFactors.x;
-        scale->z = scaleFactors.z;
+    case VriableIconBodyBoneKind_ArmL1:
+    case VriableIconBodyBoneKind_ArmL2:
+    case VriableIconBodyBoneKind_ElbowL:
+    case VriableIconBodyBoneKind_ArmR1:
+    case VriableIconBodyBoneKind_ArmR2:
+    case VriableIconBodyBoneKind_ElbowR:
+        // Arm, Elbow: YXZ
+        // Includes: Entire arms.
+        scaleOut->x = bodyScale->y;
+        scaleOut->y = bodyScale->x;
+        scaleOut->z = bodyScale->z;
         break;
-    case wrist_l:
-    case shoulder_l:
-    case wrist_r:
-    case shoulder_r:
-    case ankle_l:
-    case knee_l:
-    case ankle_r:
-    case knee_r:
-        scale->x = scaleFactors.x;
-        scale->y = scaleFactors.x;
-        scale->z = scaleFactors.x;
+    case VriableIconBodyBoneKind_WristL:
+    case VriableIconBodyBoneKind_ShoulderL:
+    case VriableIconBodyBoneKind_WristR:
+    case VriableIconBodyBoneKind_ShoulderR:
+    case VriableIconBodyBoneKind_AnkleL:
+    case VriableIconBodyBoneKind_KneeL:
+    case VriableIconBodyBoneKind_AnkleR:
+    case VriableIconBodyBoneKind_KneeR:
+        // Wrist, Shoulder, Ankle, Knee: XXX (one dimension)
+        // Includes:
+        // * Shoulders
+        // * Hand spheres
+        // * Knees
+        // * Shoes
+        scaleOut->x = bodyScale->x;
+        scaleOut->y = bodyScale->x;
+        scaleOut->z = bodyScale->x;
         break;
-    case head: {
-        scale->x = scaleFactors.x;
-        float y = fminf(scaleFactors.y, 1.0f);
-        scale->y = y;
-        scale->z = scaleFactors.z;
+    case VriableIconBodyBoneKind_Head:
+    {
+        // Head: XYZ, with Y having a minimum of 1.0.
+        // NOTE that this only applies to the area
+        // of the body used NEAR the head, which
+        // is the neck, it's not for the real head.
+
+        scaleOut->x = bodyScale->x;
+        scaleOut->y = (bodyScale->y < 1.0f) ? 1.0f : bodyScale->y;
+        scaleOut->z = bodyScale->z;
+        // The actual model matrix for the head
+        // should be the original unscaled matrix
+        // but with only translation vector scaled
         break;
     }
+
     default:
-        assert(false && "not sure which bone this is");
+        assert(false && "UpdateScale: Unexpected bone ID passed in.");
     }
     return;
 }
 
-
-void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int frame, Vector3 scaleFactors)
+// Equivalent to "nn::util::general::MatrixGetTranslation/SetTranslation"
+Vector3 MatrixGetTranslation(const Matrix m)
 {
-    if ((anim.frameCount > 0) && (anim.bones != NULL) && (anim.framePoses != NULL))
+    return (Vector3){ m.m12, m.m13, m.m14 };
+}
+void MatrixSetTranslation(Matrix* m, Vector3 t)
+{
+    m->m12 = t.x;
+    m->m13 = t.y;
+    m->m14 = t.z;
+}
+
+void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int frame, Vector3 bodyScale)
+{
+    if ((anim.frameCount <= 0) || (anim.bones == NULL) || (anim.framePoses == NULL))
+        return;
+    if (frame >= anim.frameCount)
+        frame = frame % anim.frameCount;
+    for (int i = 0; i < model.meshCount; i++)
     {
-        if (frame >= anim.frameCount)
-            frame = frame % anim.frameCount;
+        if (!model.meshes[i].boneMatrices)
+            continue;
+        assert(model.meshes[i].boneCount == anim.boneCount);
 
-        for (int i = 0; i < model.meshCount; i++)
+        for (int boneId = 0; boneId < model.meshes[i].boneCount; boneId++)
         {
-            if (model.meshes[i].boneMatrices)
-            {
-                assert(model.meshes[i].boneCount == anim.boneCount);
 
-                for (int boneId = 0; boneId < model.meshes[i].boneCount; boneId++)
-                {
-                    bool scaleEnable = boneId > 2; // chest
-                    Vector3 scaleForBone;
-                    if (scaleEnable)
-                        UpdateScaleForFFLBodyModel(&scaleForBone,
-                            (VriableIconBodyBoneKind)boneId,
-                            scaleFactors);
+            Vector3 inTranslation = model.bindPose[boneId].translation;
+            Quaternion inRotation = model.bindPose[boneId].rotation;
+            Vector3 inScale = model.bindPose[boneId].scale;
 
-                    Vector3 inTranslation = model.bindPose[boneId].translation;
-                    Quaternion inRotation = model.bindPose[boneId].rotation;
-                    Vector3 inScale = model.bindPose[boneId].scale;
+            Vector3 outTranslation = anim.framePoses[frame][boneId].translation;
+            Quaternion outRotation = anim.framePoses[frame][boneId].rotation;
+            Vector3 outScale = anim.framePoses[frame][boneId].scale;
 
-                    Vector3 outTranslation = anim.framePoses[frame][boneId].translation;
-                    Quaternion outRotation = anim.framePoses[frame][boneId].rotation;
-                    Vector3 outScale = anim.framePoses[frame][boneId].scale;
+            Vector3 invTranslation = Vector3RotateByQuaternion(Vector3Negate(inTranslation), QuaternionInvert(inRotation));
+            Quaternion invRotation = QuaternionInvert(inRotation);
+            Vector3 invScale = Vector3Divide((Vector3) { 1.0f, 1.0f, 1.0f }, inScale);
 
-                    Vector3 invTranslation = Vector3RotateByQuaternion(Vector3Negate(inTranslation), QuaternionInvert(inRotation));
-                    Quaternion invRotation = QuaternionInvert(inRotation);
-                    Vector3 invScale = Vector3Divide((Vector3) { 1.0f, 1.0f, 1.0f }, inScale);
+            Vector3 boneTranslation = Vector3Add(
+                Vector3RotateByQuaternion(Vector3Multiply(outScale, invTranslation),
+                    outRotation),
+                outTranslation);
+            Quaternion boneRotation = QuaternionMultiply(outRotation, invRotation);
+            Vector3 boneScale = Vector3Multiply(outScale, invScale);
 
-                    Vector3 boneTranslation = Vector3Add(
-                        Vector3RotateByQuaternion(Vector3Multiply(outScale, invTranslation),
-                            outRotation),
-                        outTranslation);
-                    Quaternion boneRotation = QuaternionMultiply(outRotation, invRotation);
-                    Vector3 boneScale = Vector3Multiply(outScale, invScale);
-
-                    Matrix boneMatrix = MatrixMultiply(MatrixMultiply(
-                                                           QuaternionToMatrix(boneRotation),
-                                                           MatrixTranslate(boneTranslation.x, boneTranslation.y, boneTranslation.z)),
-                        MatrixScale(boneScale.x, boneScale.y, boneScale.z));
-
-                    model.meshes[i].boneMatrices[boneId] = boneMatrix;
-                }
-            }
+            Matrix boneMatrix = MatrixMultiply(MatrixMultiply(
+                                                    QuaternionToMatrix(boneRotation),
+                                                    MatrixTranslate(boneTranslation.x, boneTranslation.y, boneTranslation.z)),
+                MatrixScale(boneScale.x, boneScale.y, boneScale.z));
+#ifndef SCALING_EXPERIMENT
+            model.meshes[i].boneMatrices[boneId] = boneMatrix;
+#else
+            Vector3 localScale;
+            UpdateScaleForFFLBodyModel(&localScale, (VriableIconBodyBoneKind)boneId, &bodyScale);
+#endif // SCALING_EXPERIMENT
         }
+
     }
 }
 
@@ -1680,7 +1706,7 @@ int main(void)
     if (isFFLAvailable)
     {
         TraceLog(LOG_DEBUG, "Creating FFLCharModel at %p", &charModel);
-        isFFLModelCreated = CreateCharModelFromStoreData(&charModel, (const void*)(&cJasmineStoreData)) == FFL_RESULT_OK;
+        isFFLModelCreated = CreateCharModelFromStoreData(&charModel, (const void*)(&cBlancoStoreData)) == FFL_RESULT_OK;
         if (isFFLModelCreated)
             InitCharModelTextures(&charModel); // does drawing
     }
@@ -1688,7 +1714,7 @@ int main(void)
     // Set up the camera for the 3D cube
     Camera camera = { 0 };
 #ifndef NO_MODELS_FOR_TEST
-    camera.position = (Vector3) { 10.0f, 10.0f, 22.0f };
+    camera.position = (Vector3) { 10.0f, 5.0f, 22.0f };
     camera.target = (Vector3) { 0.0f, 7.0f, 0.0f };
 #else
     camera.position = (Vector3) { 2.0f, 4.0f, 12.0f };
@@ -1729,7 +1755,7 @@ int main(void)
     // Load gltf model animations
     int animsCount = 0;
     unsigned int animIndex = 0;
-    unsigned int animCurrentFrame = 0;
+    int animCurrentFrame = 0;
     ModelAnimation* modelAnimations = LoadModelAnimations(modelPath, &animsCount);
     if (modelAnimations == NULL)
         TraceLog(LOG_DEBUG, "modelAnimations == NULL, not updating animation or head matrices");
@@ -1746,7 +1772,7 @@ int main(void)
 
 #ifndef NO_MODELS_FOR_TEST
     // height and build
-    Vector3 modelFFLBodyScaleFactors;
+    Vector3 modelFFLBodyScale;
     // for accessories
     FFLPartsTransform partsTransform;
     Matrix acceMatrix;
@@ -1764,20 +1790,20 @@ int main(void)
         acceMatrixRight = MatrixMultiply(acceSideRotateRight, acceSideTranslateRight);
 
         int iHeight, iBuild;
-        iHeight = 1; iBuild = 1; // NOTE: FOR DEBUG
-        //GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
+        //iHeight = 1; iBuild = 1; // NOTE: FOR DEBUG
+        GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
 
-        CalculateVariableIconBodyScaleFactors(&modelFFLBodyScaleFactors, (float)iBuild, (float)iHeight);
-        TraceLog(LOG_DEBUG, "Body scale factors: X %f, Y %f", modelFFLBodyScaleFactors.x, modelFFLBodyScaleFactors.y, modelFFLBodyScaleFactors.z);
+        CalculateBodyScale(&modelFFLBodyScale, (float)iBuild, (float)iHeight);
+        TraceLog(LOG_DEBUG, "Body scale vector: X %f, Y %f", modelFFLBodyScale.x, modelFFLBodyScale.y, modelFFLBodyScale.z);
     } else
-        modelFFLBodyScaleFactors = (Vector3) { 1.0f, 1.0f, 1.0f };
+        modelFFLBodyScale = (Vector3) { 1.0f, 1.0f, 1.0f };
 
     /*
-    Vector3 vecBodyScaleFinal = Vector3Multiply(vecBodyScaleConst, modelFFLBodyScaleFactors);
+    Vector3 vecBodyScaleFinal = Vector3Multiply(vecBodyScaleConst, modelFFLBodyScale);
     TraceLog(LOG_DEBUG, "Final body scale: X %f, Y %f, Z %f", vecBodyScaleFinal.x, vecBodyScaleFinal.y, vecBodyScaleFinal.z);
     Matrix matBodyScale = MatrixScale(vecBodyScaleFinal.x, vecBodyScaleFinal.y, vecBodyScaleFinal.z);
 
-    Vector3 vecHeadScale = Vector3Multiply(vecBodyScaleConst, (Vector3){ modelFFLBodyScaleFactors.x, fmin(modelFFLBodyScaleFactors.y, 1.0f), modelFFLBodyScaleFactors.z });
+    Vector3 vecHeadScale = Vector3Multiply(vecBodyScaleConst, (Vector3){ modelFFLBodyScale.x, fmin(modelFFLBodyScale.y, 1.0f), modelFFLBodyScale.z });
     Matrix matHeadScale = MatrixScale(vecHeadScale.x, vecHeadScale.y, vecHeadScale.z);
     */
 #endif
@@ -1817,7 +1843,7 @@ int main(void)
         {
             anim = modelAnimations[animIndex];
             animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
-            MyUpdateModelAnimationBoneMatrices(model, anim, animCurrentFrame, modelFFLBodyScaleFactors);
+            UpdateModelAnimationBones(model, anim, animCurrentFrame);//, modelFFLBodyScale);
 
             headBoneMatrix = model.meshes[0].boneMatrices[14];
 
@@ -1861,7 +1887,8 @@ int main(void)
 
         //----------------------------------------------------------------------------------
 
-        const Vector3 bodyColor = { 0.094f, 0.094f, 0.078f };
+        const FFLColor favColor = FFLGetFavoriteColor(((FFLiCharInfo*)&charModel)->favoriteColor);
+        const Vector3 bodyColor = { favColor.r, favColor.g, favColor.b };
         const Vector3 pantsColor = { 0.439f, 0.125f, 0.063f };
 #endif
         // Draw
@@ -2033,3 +2060,4 @@ void ExitFFL()
     if (gResourceDesc.size[FFL_RESOURCE_TYPE_MIDDLE] > 0)
         free(gResourceDesc.pData[FFL_RESOURCE_TYPE_MIDDLE]);
 }
+
