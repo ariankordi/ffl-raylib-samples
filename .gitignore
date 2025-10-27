@@ -1,0 +1,25 @@
+# binaries
+ffl_raylib_shader_basic
+ffl_raylib_shader_fflshader
+
+FFLRes*.dat
+
+# misc
+*.swp
+*.kate-swp
+.DS_Store
+# visual studio
+.vs
+*.pdb
+*.user
+
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+build
+cmake_install.cmake
+.cache
+.cmake
+# Emscripten
+*.data

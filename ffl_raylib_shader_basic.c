@@ -557,7 +557,7 @@ FFLResult InitializeFFL()
     TraceLog(LOG_DEBUG, "Opened %s", cFFLResourceHighFilename);
     // Seek to the end to determine file size
     fseek(file, 0, SEEK_END);
-    long fileSize = ftell(file);
+    unsigned long fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);  // Go back to the start of the file
     if (fileSize <= 0) {
         TraceLog(LOG_ERROR, "Invalid file size for %s", cFFLResourceHighFilename);

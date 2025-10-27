@@ -546,9 +546,8 @@ typedef struct {
 ShaderForFFL gShaderForFFL;
 
 // Callback forward declarations
-void ShaderForFFL_ApplyAlphaTestCallback(void* pObj, bool enable, FFLRIOCompareFunc func, float ref);
 void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* drawParam);
-void ShaderForFFL_SetMatrixCallback(void* pObj, const FFLRIOBaseMtx44f* pBaseMtx44f);
+void ShaderForFFL_SetMatrixCallback(void* pObj, const float pBaseMtx44f[16]);
 
 // Define RIO Texture2D for interop
 typedef struct Texture2DRIO
@@ -659,7 +658,6 @@ void ShaderForFFL_Initialize(ShaderForFFL* self)
 
     // Initialize the FFLShaderCallback
     self->callback.pObj = (void*)self;
-    self->callback.pApplyAlphaTestFunc = ShaderForFFL_ApplyAlphaTestCallback;
     self->callback.pDrawFunc = ShaderForFFL_DrawCallback;
     self->callback.pSetMatrixFunc = ShaderForFFL_SetMatrixCallback;
 
@@ -743,13 +741,6 @@ void ShaderForFFL_ApplyAlphaTest(bool enable, FFLRIOCompareFunc func, float ref)
 }
 */
 
-// Callback: Apply Alpha Test
-void ShaderForFFL_ApplyAlphaTestCallback(void* pObj, bool enable, FFLRIOCompareFunc func, float ref)
-{
-    TraceLog(LOG_TRACE, "ApplyAlphaTestCallback(%p, %b, %d, %f)", pObj, enable, func, ref);
-    //ShaderForFFL_ApplyAlphaTest(enable, func, ref);
-}
-
 // Set Culling Mode
 void ShaderForFFL_SetCulling(FFLCullMode mode)
 {
@@ -792,17 +783,20 @@ void ShaderForFFL_SetMaterial(ShaderForFFL* self, const FFLiDefaultShaderMateria
 }
 
 // Callback: Set Matrix
-void ShaderForFFL_SetMatrixCallback(void* pObj, const FFLRIOBaseMtx44f* pBaseMtx44f)
+void ShaderForFFL_SetMatrixCallback(void* pObj, const float pBaseMtx44f[16])
 {
     ShaderForFFL* self = (ShaderForFFL*)pObj;
 
     TraceLog(LOG_TRACE, "In ShaderForFFL_SetMatrixCallback");
     Matrix matrix;
     // Raylib matrix is in column-major order
+    /*
     matrix.m0 = pBaseMtx44f->m[0][0];  matrix.m4 = pBaseMtx44f->m[0][1];  matrix.m8 = pBaseMtx44f->m[0][2];  matrix.m12 = pBaseMtx44f->m[0][3];
     matrix.m1 = pBaseMtx44f->m[1][0];  matrix.m5 = pBaseMtx44f->m[1][1];  matrix.m9 = pBaseMtx44f->m[1][2];  matrix.m13 = pBaseMtx44f->m[1][3];
     matrix.m2 = pBaseMtx44f->m[2][0];  matrix.m6 = pBaseMtx44f->m[2][1];  matrix.m10 = pBaseMtx44f->m[2][2]; matrix.m14 = pBaseMtx44f->m[2][3];
     matrix.m3 = pBaseMtx44f->m[3][0];  matrix.m7 = pBaseMtx44f->m[3][1];  matrix.m11 = pBaseMtx44f->m[3][2]; matrix.m15 = pBaseMtx44f->m[3][3];
+    */
+    matrix = MatrixIdentity();
 
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_MODEL], MatrixIdentity());
     SetShaderValueMatrix(self->shader, self->shader.locs[SHADER_LOC_MATRIX_VIEW], MatrixIdentity());

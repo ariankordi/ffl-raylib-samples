@@ -31,64 +31,42 @@ This repo contains:
 <img src="https://github.com/user-attachments/assets/eaf4c7d2-0d5c-4afb-a762-4eac0a3bc36d" height="500">
 
 ## Building
-Don't have good instructions right now. Sorry.
 
-* You will need to [build FFL (my fork) as a library](https://github.com/ariankordi/ffl?tab=readme-ov-file#building).
+The two requirements are raylib and FFL. CMake is used for building.
 
-* Link it either statically or dynamically, alongside raylib, with the samples.
+For simplicity, FFL-Testing is included as a submodule as it has all dependendcies needed to build FFL.
 
-* They all expect FFLResHigh.dat in the current working directory, and _note that they will not be very clear if they can't find that, it will still work anyway!!!!!_
+1. Clone and install raylib.
 
-#### Build options
-
-* Include dirs:
-  - Raylib
-  - I add RIO includes because it has GLAD but not actually sure if that's necessary
-  - FFL
-* Defs:
-  - PLATFORM_DESKTOP
-  - GRAPHICS_API_USE_OPENGL33
-  - FFL_USE_TEXTURE_CALLBACK
-  - SUPPORT_TRACELOG (optional)
-* Link:
-  - raylib, lGL/lGLESv2
-  - zlib
-  - lm
-  - lsupc++ (**for FFL/RIO use of C++**)
-
-Commands used by me:
+```sh
+git clone https://github.com/raysan5/raylib && cd raylib
+cmake -S . -B build
+cmake --build build
+sudo cmake --build install # Optional, read below.
 ```
-# basic
-gcc -g3 -Wall -Wextra -Wno-c23-extensions \
--Irio/include -Iraylib -Iffl/include \
-ffl_raylib_shader_basic.c \
--Lffl/build/ -lffl -lsupc++ -lz -lGL -lraylib -lm \
--DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_TRACELOG \
--o ffl_raylib_shader_basic
+Alternatively, if you don't want to install, pass `-Draylib_DIR=/path/to/raylib/build/raylib` to the cmake command for this repo.
 
-# fflshader (mostly same as above)
-gcc -g3 -Wall -Wextra -Wno-c23-extensions \
--Irio/include -Iraylib -Iffl/include \
-ffl_raylib_shader_fflshader.c \
--Lffl/build/ -lffl -lsupc++ -lz -lGL -lraylib -lm \
--DPLATFORM_DESKTOP -DGRAPHICS_API_OPENGL_33 -DSUPPORT_TRACELOG \
--o ffl_raylib_shader_fflshader
+2. Make sure FFL-Testing submodule is cloned.
 
-# Emscripten (JUST pasting from my history, no guarantees or instructions for this at aALLLLLLLL)
-emcc -DFFL_USE_TEXTURE_CALLBACK -DNO_MODELS_FOR_TEST -g3 -Wall \
--Wno-c23-extensions -include GLES2/gl2.h -I/home/arian/Downloads/build/raylib/src -I/home/arian/Downloads/ffl/include \
-ffl_raylib_shader_fflshader.c ~/Downloads/build/ffl-build-glad/rio-ffl-glad-es2-em.a /home/arian/Downloads/build/raylib/src/libraylib.a \
--lm -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2 -DSUPPORT_TRACELOG \
--sASYNCIFY -sEXPORTED_RUNTIME_METHODS=ccall -sUSE_GLFW=3 -sUSE_ZLIB=1 -sALLOW_MEMORY_GROWTH \
---preload-file FFLResHigh.dat -o ffl_raylib_shader_fflshader.html
+You can run `git submodule update --init --recursive` if you didn't already clone recursively.
+
+3. Build with CMake.
+
+```sh
+cmake -S . --build build # Specify -Draylib_DIR if you have to.
+cmake --build build
 ```
+
+This will build FFL as a static library and then the samples afterwards.
+
+To build for the web, build raylib for the web first (just use `emcmake`), then when building this, specify: `-DCMAKE_TOOLCHAIN_FILE=/path/to/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`.
+
+4. Run the binaries built in the current directory.
+Make sure you have FFLResHigh.dat, or else either the Mii head won't render or it'll crash.
 
 ## TODO
-* Need to set up CMake for this.
-  - Project template: https://github.com/raysan5/raylib/blob/master/projects/CMake/CMakeLists.txt
 * Add .clang-format
   - Really this is needed for alllllllll projects: ffl, rio, FFL-Testing.....
-
 * Look at common code (e.g. texture callback) and consider putting it in a shared file or header
 * Remove OpenGL calls and use raw rlgl calls, which abstract to OpenGL 1.1/2.1/3.3/ES2
   - The repo originally intended to show off FFL being used with raw OpenGL, but  I'll link to the older versions if someone still wants that.
