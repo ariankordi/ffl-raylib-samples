@@ -9,24 +9,17 @@
         #define VAO_NOT_SUPPORTED
         #define GLSL_VERSION            100
     #else
-        #if defined(__APPLE__)
-            // NOTE: ignoring macOS opengl 2.1
-            #define GL_SILENCE_DEPRECATION // Silence Opengl API deprecation warnings
-            #include <OpenGL/gl3.h>     // OpenGL 3 library for OSX
-            #include <OpenGL/gl3ext.h>  // OpenGL 3 extensions library for OSX
-            #define GLSL_VERSION            330
+        #if defined(GRAPHICS_API_OPENGL_21)
+            #include "glad/gl2.h" // NOTE: DOES NOT EXIST RN
+            #define VAO_NOT_SUPPORTED
+            #define GLSL_VERSION            120
         #else
-            #if defined(GRAPHICS_API_OPENGL_21)
-                #include "glad/gl2.h" // NOTE: DOES NOT EXIST RN
-                #define VAO_NOT_SUPPORTED
-                #define GLSL_VERSION            120
-            #else
-                #include "glad/gl.h"       // Required for: OpenGL functionality
-                #define GLSL_VERSION            330
-            #endif
+            #include "glad/gl.h"       // Required for: OpenGL functionality
+            #define GLSL_VERSION            330
         #endif
     #endif
 #else   // PLATFORM_ANDROID, PLATFORM_WEB
+
     #define VAO_NOT_SUPPORTED
     #define GLSL_VERSION            100 // assume always gles
 #endif
@@ -43,21 +36,14 @@
 #include "raymath.h" // Required for: MatrixMultiply(), MatrixToFloat()
 #include "rlgl.h" // Required for: rlDrawRenderBatchActive(), rlGetMatrixModelview(), rlGetMatrixProjection()
 
-#include <nn/ffl.h>
-
-#include <nn/ffl/detail/FFLiCharInfo.h> // optional, should work in C
-
-// NOTE: you need to define this when building FFL
-// if you are dynamically linking, then call FFL's gladLoadGL too
-#ifdef FFL_ADD_GLAD_GL_IMPLEMENTATION
-#include "external/glfw/include/GLFW/glfw3.h" // glfwGetProcAddress
-int FFLGladLoadGL(GLADloadfunc load); // also gladLoadGLES2
-#else
-#define FFLGladLoadGL(x)
-#endif // FFL_ADD_GLAD_GL_IMPLEMENTATION
-
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <nn/ffl.h>
+#include <nn/ffl/detail/FFLiCharInfo.h> // optional, should work in C
+
+#include "body_scale_helpers.c"
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -549,17 +535,6 @@ ShaderForFFL gShaderForFFL;
 void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* drawParam);
 void ShaderForFFL_SetMatrixCallback(void* pObj, const float pBaseMtx44f[16]);
 
-// Define RIO Texture2D for interop
-typedef struct Texture2DRIO
-{
-
-    // Offset before mHandle
-    char padding[128]; // NOTE: rio::Texture2D does NOT have pointers
-    // We only need mHandle to bind the texture
-    GLuint mHandle; // OpenGL texture handle
-    // Other fields can be ignored for our purposes
-} Texture2DRIO;
-
 int gLocationOfShaderForFFLSkinningEnable;
 
 // Initialize the Shader
@@ -1003,8 +978,6 @@ void ShaderForFFL_DrawCallback(void* pObj, const FFLDrawParam* pDrawParam)
 FFLResourceDesc gResourceDesc; // Global so data can be freed
 
 const char* cFFLResourceHighFilename = "./FFLResHigh.dat";
-//const char* cFFLResourceHighFilename = "C:\\Users\\arko7939\\source\\repos\\FFL-Testing\\FFLResHigh.dat";
-//const char* cFFLResourceHighFilename = "/home/arian/Downloads/ffl/tools/AFLResHigh_2_3_LE.dat";
 
 // Calls FFLInitResEx and returns the result of FFLIsAvailable.
 FFLResult InitializeFFL()
@@ -1149,6 +1122,13 @@ void InitCharModelTextures(FFLCharModel* pCharModel)
 {
     TraceLog(LOG_DEBUG, "InitCharModelTextures(%p), drawing faceline and masks...", pCharModel);
 
+    // zero-init all of this
+    memset(&gFacelineRenderTexture.texture, 0, sizeof(gFacelineRenderTexture.texture));
+    for (int i = 0; i < (sizeof(gMaskRenderTextures) / sizeof(gMaskRenderTextures[0])); i++)
+    {
+        memset(&gMaskRenderTextures[i].texture, 0, sizeof(gMaskRenderTextures[0].texture));
+    }
+
     TraceLog(LOG_DEBUG, "Calling ShaderForFFL_Bind");
     ShaderForFFL_Bind(&gShaderForFFL, true); // for init textures
 
@@ -1202,7 +1182,7 @@ void InitCharModelTextures(FFLCharModel* pCharModel)
         SetTextureFilter(gFacelineRenderTexture.texture, renderTextureFilter);
         FFLiInvalidateTempObjectFacelineTexture(&piCharModel->pTextureTempObject->facelineTexture); // before drawing...
 
-        FFLColor facelineColor = FFLGetFacelineColor(piCharModel->charInfo.parts.facelineColor);
+        const FFLColor facelineColor = *FFLGetDrawParamOpaNose(pCharModel)->modulateParam.pColorR;
         TraceLog(LOG_DEBUG, "Faceline color: %f, %f, %f, %f", facelineColor.r, facelineColor.g, facelineColor.b, facelineColor.a);
         // set raylib color from FFLColor
         ClearBackground((Color) {
@@ -1295,7 +1275,7 @@ void GetHeightAndBuildFromFFLCharModel(FFLCharModel* pCharModel, int* height, in
     // also working off of the assumption that
     // charInfo is at offset 0, as the below
     // function copies charmodel to charinfo (intentional?)
-    [[maybe_unused]] FFLResult result = FFLGetAdditionalInfo(&additionalInfo, FFL_DATA_SOURCE_BUFFER, pBuffer, 0, false);
+    [[maybe_unused]] FFLResult result = FFLGetAdditionalInfo(&additionalInfo, FFL_DATA_SOURCE_DIRECT_POINTER, pBuffer, 0, false);
     TraceLog(LOG_DEBUG, "FFLGetAdditionalInfo(%p) result: %d", pBuffer, result);
     // this should only be called when model is already available so should not fail
     assert(result == FFL_RESULT_OK);
@@ -1308,7 +1288,6 @@ void GetHeightAndBuildFromFFLCharModel(FFLCharModel* pCharModel, int* height, in
 // referenced in anonymous function in nn::mii::detail::VariableIconBodyImpl::CalculateWorldMatrix
 // also in ffl_app.rpx: FUN_020ec380 (FFLUtility), FUN_020737b8 (mii maker US)
 void CalculateBodyScale(Vector3* scale, float build, float height)
-
 {
     // ScaleApply?
     // 0.47 / 128.0 = 0.003671875
@@ -1318,7 +1297,7 @@ void CalculateBodyScale(Vector3* scale, float build, float height)
                 // 0.77 / 128.0 = 0.006015625
     scale->y = (height * 0.006015625f) + 0.5f;
 
-    scale->z = scale->y;
+    scale->z = scale->x;
 }
 
 // Note that these are the same bones
@@ -1433,64 +1412,113 @@ void UpdateScaleForFFLBodyModel(Vector3* scaleOut, VriableIconBodyBoneKind bone,
     return;
 }
 
-// Equivalent to "nn::util::general::MatrixGetTranslation/SetTranslation"
-Vector3 MatrixGetTranslation(const Matrix m)
-{
-    return (Vector3){ m.m12, m.m13, m.m14 };
-}
-void MatrixSetTranslation(Matrix* m, Vector3 t)
-{
-    m->m12 = t.x;
-    m->m13 = t.y;
-    m->m14 = t.z;
-}
+//
+// Modified version of UpdateModelAnimationBones to accommodate
+// per-bone body scaling. Also, nested ifs have been replaced with
+// early return statements.
+//
 
-void MyUpdateModelAnimationBoneMatrices(Model model, ModelAnimation anim, int frame, Vector3 bodyScale)
+void UpdateModelAnimationBonesScaling(Model model, ModelAnimation anim, int frame,
+                                           const Vector3 *perBoneScales)
 {
-    if ((anim.frameCount <= 0) || (anim.bones == NULL) || (anim.framePoses == NULL))
+    // Increase this if you have more bones.
+    static const int MAX_BONES = 64;
+    Transform worldPoses[MAX_BONES];
+
+    if (anim.frameCount < 1 || anim.bones == NULL || anim.framePoses == NULL)
         return;
-    if (frame >= anim.frameCount)
-        frame = frame % anim.frameCount;
+
+    assert(anim.boneCount < MAX_BONES);
+
+    if (frame >= anim.frameCount) frame = frame % anim.frameCount;
+
+    int firstMeshWithBones = -1;
     for (int i = 0; i < model.meshCount; i++)
     {
-        if (!model.meshes[i].boneMatrices)
-            continue;
-        assert(model.meshes[i].boneCount == anim.boneCount);
-
-        for (int boneId = 0; boneId < model.meshes[i].boneCount; boneId++)
+        if (model.meshes[i].boneMatrices)
         {
+            firstMeshWithBones = i;
+            break;
+        }
+    }
 
-            Vector3 inTranslation = model.bindPose[boneId].translation;
-            Quaternion inRotation = model.bindPose[boneId].rotation;
-            Vector3 inScale = model.bindPose[boneId].scale;
+    if (firstMeshWithBones == -1)
+        return;
 
-            Vector3 outTranslation = anim.framePoses[frame][boneId].translation;
-            Quaternion outRotation = anim.framePoses[frame][boneId].rotation;
-            Vector3 outScale = anim.framePoses[frame][boneId].scale;
+    // Allocate temporary workspace for this frame only
+    // Transform *worldPoses = (Transform *)RL_MALLOC(anim.boneCount * sizeof(Transform));
+    // Copy local poses from animation frame
+    memcpy(worldPoses, anim.framePoses[frame], anim.boneCount * sizeof(Transform));
 
-            Vector3 invTranslation = Vector3RotateByQuaternion(Vector3Negate(inTranslation), QuaternionInvert(inRotation));
-            Quaternion invRotation = QuaternionInvert(inRotation);
-            Vector3 invScale = Vector3Divide((Vector3) { 1.0f, 1.0f, 1.0f }, inScale);
+    // === Build world transforms WITH per-bone scaling ===
+    for (int i = 0; i < anim.boneCount; i++)
+    {
+        if (anim.bones[i].parent < 1)
+            continue;
 
-            Vector3 boneTranslation = Vector3Add(
-                Vector3RotateByQuaternion(Vector3Multiply(outScale, invTranslation),
-                    outRotation),
-                outTranslation);
-            Quaternion boneRotation = QuaternionMultiply(outRotation, invRotation);
-            Vector3 boneScale = Vector3Multiply(outScale, invScale);
+        int parentIdx = anim.bones[i].parent;
+        Vector3 parentScale = perBoneScales ? perBoneScales[parentIdx] : (Vector3){1, 1, 1};
 
-            Matrix boneMatrix = MatrixMultiply(MatrixMultiply(
-                                                    QuaternionToMatrix(boneRotation),
-                                                    MatrixTranslate(boneTranslation.x, boneTranslation.y, boneTranslation.z)),
-                MatrixScale(boneScale.x, boneScale.y, boneScale.z));
-#ifndef SCALING_EXPERIMENT
-            model.meshes[i].boneMatrices[boneId] = boneMatrix;
-#else
-            Vector3 localScale;
-            UpdateScaleForFFLBodyModel(&localScale, (VriableIconBodyBoneKind)boneId, &bodyScale);
-#endif // SCALING_EXPERIMENT
+        // Scale this bone's translation by parent's scale
+        worldPoses[i].translation = Vector3Multiply(worldPoses[i].translation, parentScale);
+
+        // Multiply by parent's world transform
+        worldPoses[i].rotation = QuaternionMultiply(worldPoses[parentIdx].rotation, worldPoses[i].rotation);
+        worldPoses[i].translation = Vector3RotateByQuaternion(worldPoses[i].translation, worldPoses[parentIdx].rotation);
+        worldPoses[i].translation = Vector3Add(worldPoses[i].translation, worldPoses[parentIdx].translation);
+
+        if (parentIdx == VriableIconBodyBoneKind_SklRoot)
+        {
+            Vector3 bodyScale = perBoneScales[VriableIconBodyBoneKind_Chest];
+            // Multiply translation by YYX axes:
+            worldPoses[i].translation.x *= bodyScale.y; // X by bodyScale.y
+            worldPoses[i].translation.y *= bodyScale.y; // Y by bodyScale.y
+            worldPoses[i].translation.z *= bodyScale.x; // Z by bodyScale.x
+
+            // Add to Y translation from bodyScale and
+            // scale factor of body model relative to world vvv
+            worldPoses[i].translation.y += ((bodyScale.x - bodyScale.y) * 1.0f);
+                            // cBodyScaleFactor ^^^^ (orig. = 7.0f)
         }
 
+        // DON'T multiply scale yet
+    }
+
+    // === Apply per-bone scaling to rotation/scale components ===
+    if (perBoneScales)
+    {
+        for (int i = 0; i < anim.boneCount; i++)
+            worldPoses[i].scale = Vector3Multiply(worldPoses[i].scale, perBoneScales[i]);
+    }
+
+    // === Compute final bone matrices ===
+    for (int boneId = 0; boneId < anim.boneCount; boneId++)
+    {
+        Transform *bindTransform = &model.bindPose[boneId];
+        Matrix bindMatrix = MatrixMultiply(MatrixMultiply(
+            MatrixScale(bindTransform->scale.x, bindTransform->scale.y, bindTransform->scale.z),
+            QuaternionToMatrix(bindTransform->rotation)),
+            MatrixTranslate(bindTransform->translation.x, bindTransform->translation.y, bindTransform->translation.z));
+
+        Transform *targetTransform = &worldPoses[boneId];
+        Matrix targetMatrix = MatrixMultiply(MatrixMultiply(
+            MatrixScale(targetTransform->scale.x, targetTransform->scale.y, targetTransform->scale.z),
+            QuaternionToMatrix(targetTransform->rotation)),
+            MatrixTranslate(targetTransform->translation.x, targetTransform->translation.y, targetTransform->translation.z));
+
+        model.meshes[firstMeshWithBones].boneMatrices[boneId] =
+            MatrixMultiply(MatrixInvert(bindMatrix), targetMatrix);
+    }
+
+    // Copy to other meshes
+    for (int i = firstMeshWithBones + 1; i < model.meshCount; i++)
+    {
+        if (model.meshes[i].boneMatrices)
+        {
+            memcpy(model.meshes[i].boneMatrices,
+                model.meshes[firstMeshWithBones].boneMatrices,
+                model.meshes[i].boneCount * sizeof(model.meshes[i].boneMatrices[0]));
+        }
     }
 }
 
@@ -1656,6 +1684,18 @@ void SetNullTextureCallback()
     FFLSetTextureCallback(&gTextureCallback);
 }
 
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
+void RecalculateBodyMatrices(Vector3* pBodyScale, Vector3* pBoneScales, float build, float height) {
+    CalculateBodyScale(pBodyScale, build, height);
+    TraceLog(LOG_DEBUG, "Body scale vector: X/Z %f, Y %f", pBodyScale->x, pBodyScale->y);
+
+    for (int i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
+        UpdateScaleForFFLBodyModel(&pBoneScales[i], i, pBodyScale);
+}
+
+
 int main(void)
 {
     SetTraceLogLevel(LOG_DEBUG);
@@ -1673,10 +1713,6 @@ int main(void)
     const int screenHeight = 600;
 
     InitWindow(screenWidth, screenHeight, "raylib [models] example - draw cube texture");
-
-    // all FFL initialization happens after gl context is created
-    // e.g. FFLInitCharModelCPUStep is creating and uploading textures
-    FFLGladLoadGL(glfwGetProcAddress);
 
     TraceLog(LOG_DEBUG, "Calling ShaderForFFL_Initialize(%p)", &gShaderForFFL);
     ShaderForFFL_Initialize(&gShaderForFFL);
@@ -1750,7 +1786,7 @@ int main(void)
     int animsCount = 0;
     unsigned int animIndex = 0;
     int animCurrentFrame = 0;
-    ModelAnimation* modelAnimations = LoadModelAnimations(modelPath, &animsCount);
+    ModelAnimation* modelAnimations = LoadModelAnimationsGLBParents(modelPath, &animsCount);
     if (modelAnimations == NULL)
         TraceLog(LOG_DEBUG, "modelAnimations == NULL, not updating animation or head matrices");
 
@@ -1766,11 +1802,13 @@ int main(void)
 
 #ifndef NO_MODELS_FOR_TEST
     // height and build
-    Vector3 modelFFLBodyScale;
+    Vector3 modelFFLBodyScale = (Vector3) { 1.0f, 1.0f, 1.0f };
     // for accessories
     FFLPartsTransform partsTransform;
     Matrix acceMatrix;
     Matrix acceMatrixRight;
+
+    float build, height;
     if (isFFLModelCreated)
     {
         FFLGetPartsTransform(&partsTransform, &charModel);
@@ -1786,9 +1824,8 @@ int main(void)
         int iHeight, iBuild;
         //iHeight = 1; iBuild = 1; // NOTE: FOR DEBUG
         GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
-
-        CalculateBodyScale(&modelFFLBodyScale, (float)iBuild, (float)iHeight);
-        TraceLog(LOG_DEBUG, "Body scale vector: X %f, Y %f", modelFFLBodyScale.x, modelFFLBodyScale.y, modelFFLBodyScale.z);
+        build = (float)iBuild;
+        height = (float)iHeight;
     } else
         modelFFLBodyScale = (Vector3) { 1.0f, 1.0f, 1.0f };
 
@@ -1802,14 +1839,47 @@ int main(void)
     */
 #endif
 
+    Vector3 boneScales[VriableIconBodyBoneKind_End];
+    for (size_t i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
+        boneScales[i].x = boneScales[i].y = boneScales[i].z = 1.0f;
+
+    RecalculateBodyMatrices(&modelFFLBodyScale, boneScales, build, height);
+
+    float newBuild = build; float newHeight = height;
+
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
 #ifndef NO_MODELS_FOR_TEST
-        UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
+            UpdateCamera(&camera, CAMERA_THIRD_PERSON);
         // Update
         //----------------------------------------------------------------------------------
         // Calculate rotation angle
+        GuiSlider((Rectangle){ 100, 100, 200, 20 },
+                    "Build",
+                    TextFormat("%2.2f", build),
+                    &newBuild, 0, 127);
+
+        if (newBuild != build)
+        {
+            //printf("build changed, old: %f, new: %f\n", build, newBuild);
+            build = newBuild;
+            // Run your custom code when slider 1 changes!
+            RecalculateBodyMatrices(&modelFFLBodyScale, boneScales, build, height);
+        }
+
+        GuiSlider((Rectangle){ 100, 150, 200, 20 },
+                                            "Height",
+                                            TextFormat("%2.2f", height),
+                                            &newHeight, 0, 127);
+
+        if (newHeight != height)
+        {
+            height = newHeight;
+            // Run your custom code when slider 2 changes!
+            RecalculateBodyMatrices(&modelFFLBodyScale, boneScales, build, height);
+        }
 #else
         float rotationAngle;
 #endif
@@ -1833,15 +1903,23 @@ int main(void)
         ModelAnimation anim;
         Matrix headBoneMatrix;
         Matrix headModelMatrix;
+        Vector3 bodyColor = { 0.094f, 0.094f, 0.078f }; // default
+
         if (modelAnimations != NULL)
         {
             anim = modelAnimations[animIndex];
             animCurrentFrame = (animCurrentFrame + 1) % anim.frameCount;
-            UpdateModelAnimationBones(model, anim, animCurrentFrame);//, modelFFLBodyScale);
+            UpdateModelAnimationBonesScaling(model, anim, animCurrentFrame, boneScales);
+            //UpdateModelAnimation(model, anim, animCurrentFrame);
 
-            headBoneMatrix = model.meshes[0].boneMatrices[14];
-
+            headBoneMatrix = model.meshes[0].boneMatrices[VriableIconBodyBoneKind_Head];
+            // decompose the head bone matrix to JUST translation
+            headBoneMatrix = MatrixTranslate(headBoneMatrix.m12, headBoneMatrix.m13, headBoneMatrix.m14);
             headModelMatrix = MatrixMultiply(headBoneMatrix, matBodyScale);
+
+            // get favorite color and reintrepret as Vector3
+            const FFLColor favColor = FFLGetFavoriteColor(((FFLiCharInfo*)&charModel)->favoriteColor);
+            bodyColor = *(Vector3*)&favColor; // copy values, first three floats
         }
         else
         {
@@ -1880,9 +1958,6 @@ int main(void)
         */
 
         //----------------------------------------------------------------------------------
-
-        const FFLColor favColor = FFLGetFavoriteColor(((FFLiCharInfo*)&charModel)->favoriteColor);
-        const Vector3 bodyColor = { favColor.r, favColor.g, favColor.b };
         const Vector3 pantsColor = { 0.439f, 0.125f, 0.063f };
 #endif
         // Draw
@@ -1936,9 +2011,9 @@ int main(void)
         {
             // FFL model scale is 10.0
 #ifndef NO_MODELS_FOR_TEST
-            Matrix matModel = MatrixMultiply(MatrixScale(0.1f, 0.1f, 0.1f), headModelMatrix);
+            Matrix matModel = MatrixMultiply(MatrixScale(0.14f, 0.14f, 0.14f), headModelMatrix);
 #else
-            Matrix matModel = MatrixScale(0.1f, 0.1f, 0.1f);
+            Matrix matModel = MatrixScale(0.14f, 0.14f, 0.14f);
 #endif
             rlPushMatrix();
             Matrix matView = rlGetMatrixModelview();
@@ -2054,4 +2129,3 @@ void ExitFFL()
     if (gResourceDesc.size[FFL_RESOURCE_TYPE_MIDDLE] > 0)
         free(gResourceDesc.pData[FFL_RESOURCE_TYPE_MIDDLE]);
 }
-

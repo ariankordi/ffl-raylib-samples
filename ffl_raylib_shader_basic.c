@@ -11,30 +11,19 @@
         #define VAO_NOT_SUPPORTED
         #define GLSL_VERSION            100
     #else
-        #if defined(__APPLE__)
-            // NOTE: ignoring macOS opengl 2.1
-            #define GL_SILENCE_DEPRECATION // Silence Opengl API deprecation warnings
-            #include <OpenGL/gl3.h>     // OpenGL 3 library for OSX
-            #include <OpenGL/gl3ext.h>  // OpenGL 3 extensions library for OSX
-            #define GLSL_VERSION            330
+        #if defined(GRAPHICS_API_OPENGL_21)
+            #include "glad/gl2.h" // NOTE: DOES NOT EXIST RN
+            #define VAO_NOT_SUPPORTED
+            #define GLSL_VERSION            120
         #else
-            #if defined(GRAPHICS_API_OPENGL_21)
-                #include "glad/gl2.h" // NOTE: DOES NOT EXIST RN
-                #define VAO_NOT_SUPPORTED
-                #define GLSL_VERSION            120
-            #else
-                #include "glad/gl.h"       // Required for: OpenGL functionality
-                #define GLSL_VERSION            330
-            #endif
+            #include "glad/gl.h"       // Required for: OpenGL functionality
+            #define GLSL_VERSION            330
         #endif
     #endif
 #else   // PLATFORM_ANDROID, PLATFORM_WEB
 
-    // HACK: ONLY FOR CLANGD
-    //#include "glad/gles2.h"
-
     #define VAO_NOT_SUPPORTED
-    #define GLSL_VERSION            100
+    #define GLSL_VERSION            100 // assume always gles
 #endif
 
 /*

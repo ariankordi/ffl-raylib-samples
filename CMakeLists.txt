@@ -50,6 +50,11 @@ set(COMMON_LIBRARIES
     ffl
 )
 
+if(APPLE)
+    # Checks if OSX and links appropriate frameworks (Only required on MacOS)
+    set(COMMON_LIBRARIES ${COMMON_LIBRARIES} "-framework IOKit" "-framework Cocoa" "-framework OpenGL")
+endif()
+
 # -------------------- Common Settings --------------------
 
 # Common compile definitions

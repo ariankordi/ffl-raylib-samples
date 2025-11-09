@@ -1,7 +1,9 @@
 # binaries
 ffl_raylib_shader_basic
 ffl_raylib_shader_fflshader
+*.exe
 
+# ffl resource file
 FFLRes*.dat
 
 # misc
@@ -21,5 +23,9 @@ build
 cmake_install.cmake
 .cache
 .cmake
+
 # Emscripten
+*.html
+*.wasm
+*.js
 *.data
