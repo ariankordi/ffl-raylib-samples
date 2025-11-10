@@ -1300,6 +1300,53 @@ void CalculateBodyScale(Vector3* scale, float build, float height)
     scale->z = scale->x;
 }
 
+void UpdateCharModel(FFLCharModel* pModel, const FFLiCharInfo* pNewCharInfo)
+{
+
+    FFLCharModelSource source = {
+        .dataSource = FFL_DATA_SOURCE_BUFFER,
+        .pBuffer = pNewCharInfo,
+        .index = 0
+    };
+
+    FFLCharModelDesc desc;
+    memcpy(&desc, &((FFLiCharModel*)pModel)->charModelDesc, sizeof(FFLCharModelDesc));
+
+#if 1
+    FFLCharModel modelTempForDelete;
+    memcpy(&modelTempForDelete, pModel, sizeof(FFLCharModel));
+#else
+    FFLDeleteCharModel(pModel);
+#endif
+
+    FFLResult result = FFLInitCharModelCPUStep(pModel, &source, &desc);
+
+    if (result != FFL_RESULT_OK)
+    {
+        TraceLog(LOG_ERROR, "FFLInitCharModelCPUStep failed with result: %d", result);
+        memcpy(pModel, &modelTempForDelete, sizeof(FFLCharModel));
+        return;
+    }
+
+    // delete old render textures
+    if (gFacelineRenderTexture.texture.width)
+    {
+        UnloadRenderTexture(gFacelineRenderTexture);
+    }
+    for (int i = 0; i < (sizeof(gMaskRenderTextures) / sizeof(gMaskRenderTextures[0])); i++)
+    {
+        if (gMaskRenderTextures[i].id)
+        {
+            UnloadRenderTexture(gMaskRenderTextures[i]);
+        }
+    }
+
+    InitCharModelTextures(pModel);
+#if 1
+    FFLDeleteCharModel(&modelTempForDelete);
+#endif
+}
+
 // Note that these are the same bones
 // between the Switch MiiBodyHigh model
 // and the Wii U MiiBodyMiddle model.
@@ -1457,7 +1504,11 @@ void UpdateModelAnimationBonesScaling(Model model, ModelAnimation anim, int fram
             continue;
 
         int parentIdx = anim.bones[i].parent;
+#if 1
         Vector3 parentScale = perBoneScales ? perBoneScales[parentIdx] : (Vector3){1, 1, 1};
+#else
+        static const Vector3 parentScale = {1.0f, 1.0f, 1.0f};
+#endif
 
         // Scale this bone's translation by parent's scale
         worldPoses[i].translation = Vector3Multiply(worldPoses[i].translation, parentScale);
@@ -1485,11 +1536,13 @@ void UpdateModelAnimationBonesScaling(Model model, ModelAnimation anim, int fram
     }
 
     // === Apply per-bone scaling to rotation/scale components ===
+#if 1
     if (perBoneScales)
     {
         for (int i = 0; i < anim.boneCount; i++)
             worldPoses[i].scale = Vector3Multiply(worldPoses[i].scale, perBoneScales[i]);
     }
+#endif
 
     // === Compute final bone matrices ===
     for (int boneId = 0; boneId < anim.boneCount; boneId++)
@@ -1687,14 +1740,26 @@ void SetNullTextureCallback()
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
-void RecalculateBodyMatrices(Vector3* pBodyScale, Vector3* pBoneScales, float build, float height) {
+Camera camera = { 0 };
+
+void UpdateBodyScale(Vector3* pBodyScale, Vector3* pBoneScales, float build, float height) {
+    const float oldScaleY = pBodyScale->y;
     CalculateBodyScale(pBodyScale, build, height);
-    TraceLog(LOG_DEBUG, "Body scale vector: X/Z %f, Y %f", pBodyScale->x, pBodyScale->y);
+    const float scaleDiffY = (pBodyScale->y - oldScaleY) * 8.0f;
+    camera.position.y += scaleDiffY;
+    camera.target.y += scaleDiffY;
+    TraceLog(LOG_TRACE, "Body scale vector: X/Z %f, Y %f", pBodyScale->x, pBodyScale->y);
 
     for (int i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
         UpdateScaleForFFLBodyModel(&pBoneScales[i], i, pBodyScale);
 }
 
+extern bool FFLiCompareCharInfoWithAdditionalInfo(int* pFlagOut, int flagIn, const FFLiCharInfo* pCharInfoA, const FFLiCharInfo* pCharInfoB, const FFLAdditionalInfo* pAdditionalInfoA, const FFLAdditionalInfo* pAdditionalInfoB)
+#if defined(__clang__) && !defined(__EMSCRIPTEN__)
+asm("__Z37FFLiCompareCharInfoWithAdditionalInfoPiiPK12FFLiCharInfoS2_PK17FFLAdditionalInfoS5_");
+#else
+asm("_Z37FFLiCompareCharInfoWithAdditionalInfoPiiPK12FFLiCharInfoS2_PK17FFLAdditionalInfoS5_");
+#endif
 
 int main(void)
 {
@@ -1742,10 +1807,11 @@ int main(void)
     }
 
     // Set up the camera for the 3D cube
-    Camera camera = { 0 };
 #ifndef NO_MODELS_FOR_TEST
-    camera.position = (Vector3) { 10.0f, 5.0f, 22.0f };
-    camera.target = (Vector3) { 0.0f, 7.0f, 0.0f };
+    //camera.position = (Vector3) { 10.0f, 5.0f, 22.0f };
+    //camera.target = (Vector3) { 0.0f, 7.0f, 0.0f };
+    camera.position = (Vector3) { 2.0f, 13.25f, 25.8f };
+    camera.target = (Vector3) { 4.7f, 12.0f, 1.8f };
 #else
     camera.position = (Vector3) { 2.0f, 4.0f, 12.0f };
     camera.target = (Vector3) { 0.0f, 2.5f, 0.0f };
@@ -1760,7 +1826,7 @@ int main(void)
 #ifndef NO_MODELS_FOR_TEST
     // Load body model
     const char* modelPath = "models/miibodymiddle female test.glb";
-    const float bodyScale = 0.7f;
+    const float bodyScale = 1.0f;
     const Vector3 vecBodyScaleConst = (Vector3) { bodyScale, bodyScale, bodyScale };
     Matrix matBodyScale = MatrixScale(vecBodyScaleConst.x, vecBodyScaleConst.y, vecBodyScaleConst.z);
     Model model = LoadModel(modelPath);
@@ -1826,8 +1892,7 @@ int main(void)
         GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
         build = (float)iBuild;
         height = (float)iHeight;
-    } else
-        modelFFLBodyScale = (Vector3) { 1.0f, 1.0f, 1.0f };
+    }
 
     /*
     Vector3 vecBodyScaleFinal = Vector3Multiply(vecBodyScaleConst, modelFFLBodyScale);
@@ -1843,43 +1908,53 @@ int main(void)
     for (size_t i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
         boneScales[i].x = boneScales[i].y = boneScales[i].z = 1.0f;
 
-    RecalculateBodyMatrices(&modelFFLBodyScale, boneScales, build, height);
+    int scrollOffset = 0;
+    UpdateBodyScale(&modelFFLBodyScale, boneScales, build, height);
 
     float newBuild = build; float newHeight = height;
+
+    const FFLiCharInfo* pInfoCurrent = (const FFLiCharInfo*)&charModel;
+
+    FFLiCharInfo charInfo; // new charinfo
+    memcpy(&charInfo, pInfoCurrent, sizeof(FFLiCharInfo));
+
 
     // Main game loop
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
 #ifndef NO_MODELS_FOR_TEST
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) || IsMouseButtonDown(MOUSE_BUTTON_MIDDLE))
-            UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ||
+            IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) ||
+            IsKeyDown(KEY_LEFT_CONTROL))
+            UpdateCamera(&camera, CAMERA_FREE);
         // Update
         //----------------------------------------------------------------------------------
-        // Calculate rotation angle
-        GuiSlider((Rectangle){ 100, 100, 200, 20 },
-                    "Build",
-                    TextFormat("%2.2f", build),
-                    &newBuild, 0, 127);
 
-        if (newBuild != build)
+        // Compare current CharInfo with the previous one
+        int comparisonFlag = 0;
+        if (FFLiCompareCharInfoWithAdditionalInfo(
+            &comparisonFlag,
+            1 << 0,// FFLI_COMPARE_CHAR_INFO_FLAG_PARTS,
+            &charInfo, // new charinfo
+            // current charinfo:
+            pInfoCurrent, // NOTE: charinfo is at 0 offset
+            NULL, NULL // do not care about additional info
+        ))
         {
-            //printf("build changed, old: %f, new: %f\n", build, newBuild);
-            build = newBuild;
-            // Run your custom code when slider 1 changes!
-            RecalculateBodyMatrices(&modelFFLBodyScale, boneScales, build, height);
+            TraceLog(LOG_INFO, "updating charmodel");
+            UpdateCharModel(&charModel, &charInfo);
+            // Update previous CharInfo to current CharInfo
+            memcpy(&charInfo, pInfoCurrent, sizeof(FFLiCharInfo));
+
+            /*
+            int iHeight, iBuild;
+            //iHeight = 1; iBuild = 1; // NOTE: FOR DEBUG
+            GetHeightAndBuildFromFFLCharModel(&charModel, &iHeight, &iBuild);
+            build = (float)iBuild; height = (float)iHeight;
+            UpdateBodyScale(&modelFFLBodyScale, boneScales, build, height);
+            */
         }
 
-        GuiSlider((Rectangle){ 100, 150, 200, 20 },
-                                            "Height",
-                                            TextFormat("%2.2f", height),
-                                            &newHeight, 0, 127);
-
-        if (newHeight != height)
-        {
-            height = newHeight;
-            // Run your custom code when slider 2 changes!
-            RecalculateBodyMatrices(&modelFFLBodyScale, boneScales, build, height);
-        }
 #else
         float rotationAngle;
 #endif
@@ -1926,36 +2001,6 @@ int main(void)
             headBoneMatrix = MatrixIdentity();
             headModelMatrix = MatrixIdentity();
         }
-
-
-        //int boneId = ((int)rotationAngle / 20 ) % model.boneCount; // head??
-        /*
-        const int boneId = 14; // think this is head
-
-        Vector3 inTranslation = model.bindPose[boneId].translation;
-        Quaternion inRotation = model.bindPose[boneId].rotation;
-        Vector3 inScale = model.bindPose[boneId].scale;
-
-        Vector3 outTranslation = anim.framePoses[animCurrentFrame][boneId].translation;
-        Quaternion outRotation = anim.framePoses[animCurrentFrame][boneId].rotation;
-        Vector3 outScale = anim.framePoses[animCurrentFrame][boneId].scale;
-
-        Vector3 invTranslation = Vector3RotateByQuaternion(Vector3Negate(inTranslation), QuaternionInvert(inRotation));
-        Quaternion invRotation = QuaternionInvert(inRotation);
-        Vector3 invScale = Vector3Divide((Vector3){ 1.0f, 1.0f, 1.0f }, inScale);
-
-        Vector3 boneTranslation = Vector3Add(
-            Vector3RotateByQuaternion(Vector3Multiply(outScale, invTranslation),
-            outRotation), outTranslation);
-        Quaternion boneRotation = QuaternionMultiply(outRotation, invRotation);
-        Vector3 bodyBoneScale = Vector3Multiply(outScale, invScale);
-        Vector3 boneScale = Vector3Scale(bodyBoneScale, bodyScale);
-
-        Matrix headModelMatrix = MatrixMultiply(MatrixMultiply(
-            QuaternionToMatrix(boneRotation),
-            MatrixTranslate(boneTranslation.x, boneTranslation.y, boneTranslation.z)),
-            MatrixScale(boneScale.x, boneScale.y, boneScale.z));
-        */
 
         //----------------------------------------------------------------------------------
         const Vector3 pantsColor = { 0.439f, 0.125f, 0.063f };
@@ -2050,11 +2095,294 @@ int main(void)
 
         // Display FPS100ms
         DrawFPS(10, 10);
-        /*
-        char whichBone[64];
-        sprintf((char*)&whichBone, "bone id %i\n", boneId);
-        DrawText(whichBone, 50, 50, 60, PURPLE);
-        */
+
+
+        // UI Panel with scroll.
+        int width = 280;
+        Rectangle scrollPanelBounds = {
+            (float)(screenWidth - width), 10.0f, 250.0f,
+            (float)(screenHeight - 20.0f)
+        };
+        Vector2 scrollPanelScroll = {0.0f, (float)scrollOffset};
+        Rectangle scrollPanelContent = {0.0f, 0.0f, 180.0f, 1400.0f};
+
+        GuiScrollPanel(scrollPanelBounds, "edit FFLiCharInfo", scrollPanelContent,
+                       &scrollPanelScroll, NULL);
+        scrollOffset = (int)scrollPanelScroll.y;
+
+        float uiX = scrollPanelBounds.x + 80.0f;
+        float uiY = scrollPanelBounds.y + 25.0f + scrollPanelScroll.y;
+        float uiWidth = 125.0f;
+        float uiHeight = 20.0f;
+        float uiSpacing = 5.0f;
+
+        // Face.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Face");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Faceline Type ", &charInfo.parts.faceType, 0,
+                    FFL_FACE_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Faceline Color ", &charInfo.parts.facelineColor, 0,
+                    FFL_FACELINE_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Face Wrinkle ", &charInfo.parts.faceLine, 0,
+                    FFL_FACE_LINE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Face Make  ", &charInfo.parts.faceMakeup, 0,
+                    FFL_FACE_MAKE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Hair.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Hair");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Hair Type ", &charInfo.parts.hairType, 0,
+                    FFL_HAIR_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Hair Color ", &charInfo.parts.hairColor, 0,
+                    FFL_HAIR_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Hair Flip ", &charInfo.parts.hairDir,
+                    0, FFL_HAIR_DIR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Eyes.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Eyes");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye Type ", &charInfo.parts.eyeType, 0,
+                    FFL_EYE_TYPE_DATA_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye Color ", &charInfo.parts.eyeColor, 0,
+                    FFL_EYE_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye Scale ", &charInfo.parts.eyeScale, 0,
+                    FFL_EYE_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye Aspect ", &charInfo.parts.eyeScaleY, 0,
+                    FFL_EYE_SCALE_Y_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye Rotation ", &charInfo.parts.eyeRotate, 0,
+                    FFL_EYE_ROTATE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye X ", &charInfo.parts.eyeSpacingX, 0,
+                    FFL_EYE_SPACING_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eye Y ", &charInfo.parts.eyePositionY, 0,
+                    FFL_EYE_POS_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Eyebrows.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Eyebrows");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow Type ", &charInfo.parts.eyebrowType, 0,
+                    FFL_EYEBROW_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow Color ", &charInfo.parts.eyebrowColor, 0,
+                    FFL_EYEBROW_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow Scale ", &charInfo.parts.eyebrowScale, 0,
+                    FFL_EYEBROW_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow Aspect ", &charInfo.parts.eyebrowScaleY, 0,
+                    FFL_EYEBROW_SCALE_Y_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow Rotation ", &charInfo.parts.eyebrowRotate, 0,
+                    FFL_EYEBROW_ROTATE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow X ", &charInfo.parts.eyebrowSpacingX, 0,
+                    FFL_EYEBROW_SPACING_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Eyebrow Y ", &charInfo.parts.eyebrowPositionY,
+                    FFL_EYEBROW_POS_MIN,
+                    FFL_EYEBROW_POS_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Nose.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Nose");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Nose Type ", &charInfo.parts.noseType, 0,
+                    FFL_NOSE_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Nose Scale ", &charInfo.parts.noseScale, 0,
+                    FFL_NOSE_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Nose Y ", &charInfo.parts.nosePositionY, 0,
+                    FFL_NOSE_POS_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Mouth.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Mouth");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mouth Type ", &charInfo.parts.mouthType, 0,
+                    FFL_MOUTH_TYPE_DATA_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mouth Color ", &charInfo.parts.mouthColor, 0,
+                    FFL_MOUTH_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mouth Scale ", &charInfo.parts.mouthScale, 0,
+                    FFL_MOUTH_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mouth Aspect ", &charInfo.parts.mouthScaleY, 0,
+                    FFL_MOUTH_SCALE_Y_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mouth Y ", &charInfo.parts.mouthPositionY, 0,
+                    FFL_MOUTH_POS_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Mustache and Beard.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Mustache/Beard");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mustache Type ", &charInfo.parts.mustacheType, 0,
+                    FFL_MUSTACHE_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Beard Type ", &charInfo.parts.beardType, 0,
+                    FFL_BEARD_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Beard Color ", &charInfo.parts.beardColor, 0,
+                    FFL_BEARD_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mustache Scale ", &charInfo.parts.mustacheScale, 0,
+                    FFL_MUSTACHE_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mustache Y ", &charInfo.parts.mustachePositionY, 0,
+                    FFL_MUSTACHE_POS_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Glasses.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Glasses");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Glass Type ", &charInfo.parts.glassType, 0, 19, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Glass Color ", &charInfo.parts.glassColor, 0,
+                    FFL_GLASS_COLOR_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Glass Scale ", &charInfo.parts.glassScale, 0,
+                    FFL_GLASS_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Glass Y ", &charInfo.parts.glassPositionY, 0,
+                    FFL_GLASS_POS_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        // Mole.
+        GuiLabel((Rectangle){uiX, uiY, uiWidth, uiHeight}, "Mole");
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mole Existence ", &charInfo.parts.moleType, 0,
+                    FFL_MOLE_TYPE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mole Scale ", &charInfo.parts.moleScale, 0,
+                    FFL_MOLE_SCALE_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mole X ", &charInfo.parts.molePositionX, 0,
+                    FFL_MOLE_POS_X_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        GuiSpinner((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Mole Y ", &charInfo.parts.molePositionY, 0,
+                    FFL_MOLE_POS_Y_MAX - 1, true);
+        uiY += uiHeight + uiSpacing;
+
+        //GuiSlider((Rectangle){ 100, 100, 200, 20 },
+        GuiSlider((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Build",
+                    TextFormat("%2.2f", build),
+                    &newBuild, 0, 127);
+        uiY += uiHeight + uiSpacing;
+
+        //GuiSlider((Rectangle){ 100, 150, 200, 20 },
+        GuiSlider((Rectangle){uiX, uiY, uiWidth, uiHeight},
+                    "Height",
+                    TextFormat("%2.2f", height),
+                    &newHeight, 0, 127);
+        uiY += uiHeight + uiSpacing;
+
+        if (newHeight != height || newBuild != build)
+        {
+            height = newHeight;
+            build = newBuild;
+            UpdateBodyScale(&modelFFLBodyScale, boneScales, build, height);
+        }
+
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
