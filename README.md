@@ -79,3 +79,13 @@ Make sure you have FFLResHigh.dat, or else either the Mii head won't render or i
 * Add mipmap support to fflshader version
 * ig it would be nice to have a sample with [raygui](https://github.com/raysan5/raygui)
   - just... play and add stuff!!!! idk.
+
+#### build mii editor to work on michaelsoft xp
+
+* you need mingw
+* replace `mingw-w64-i686` with `mingw-w64-x86_64` if you need to
+1. `wget https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/ad52f7b7890ee1b87528d55c3014752c05b8e92d/ports/mingw-w64/mingw-w64-i686.cmake`
+2. `cmake -DCMAKE_TOOLCHAIN_FILE=mingw-w64-i686.cmake -B build -S . -DUSE_LATEST_RAYLIB_RGFW=ON -DFFL_USE_EM_INFLATE=ON -DCMAKE_EXE_LINKER_FLAGS="-mcrtdll=msvcrt-os -mwindows" -DCMAKE_C_FLAGS="-DRGFW_NO_DWM -DRGFW_NO_DPI"`
+3. `cmake --build build -j4`
+
+but it needs opengl 3.3 so probably will not work on your typical xp machine, but certain nvidia gpus did support this on xp like the 9400m/ion

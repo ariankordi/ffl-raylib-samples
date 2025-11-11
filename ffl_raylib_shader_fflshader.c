@@ -18,10 +18,6 @@
             #define GLSL_VERSION            330
         #endif
     #endif
-#else   // PLATFORM_ANDROID, PLATFORM_WEB
-
-    #define VAO_NOT_SUPPORTED
-    #define GLSL_VERSION            100 // assume always gles
 #endif
 
 /*
@@ -221,84 +217,84 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
     const int MODULATE_MODE_LUMINANCE_ALPHA = 4;
     const int MODULATE_MODE_ALPHA_OPA       = 5;
 
-    mediump float calculateAnisotropicSpecular(mediump vec3 light, mediump vec3 tangent, mediump vec3 eye, mediump float power)
+    float calculateAnisotropicSpecular(vec3 light, vec3 tangent, vec3 eye, float power)
     {
-        mediump float dotLT = dot(light, tangent);
-        mediump float dotVT = dot(eye, tangent);
-        mediump float dotLN = sqrt(1.0 - dotLT * dotLT);
-        mediump float dotVR = dotLN * sqrt(1.0 - dotVT * dotVT) - dotLT * dotVT;
+        float dotLT = dot(light, tangent);
+        float dotVT = dot(eye, tangent);
+        float dotLN = sqrt(1.0 - dotLT * dotLT);
+        float dotVR = dotLN * sqrt(1.0 - dotVT * dotVT) - dotLT * dotVT;
         return pow(max(0.0, dotVR), power);
     }
 
-    mediump float calculateBlinnSpecular(mediump vec3 light, mediump vec3 normal, mediump vec3 eye, mediump float power)
+    float calculateBlinnSpecular(vec3 light, vec3 normal, vec3 eye, float power)
     {
         return pow(max(dot(reflect(-light, normal), eye), 0.0), power);
     }
 
-    mediump float calculateSpecularBlend(mediump float blend, mediump float blinn, mediump float aniso)
+    float calculateSpecularBlend(float blend, float blinn, float aniso)
     {
         return mix(aniso, blinn, blend);
     }
 
-    mediump vec3 calculateAmbientColor(mediump vec3 light, mediump vec3 material)
+    vec3 calculateAmbientColor(vec3 light, vec3 material)
     {
         return light * material;
     }
 
-    mediump vec3 calculateDiffuseColor(mediump vec3 light, mediump vec3 material, mediump float ln)
+    vec3 calculateDiffuseColor(vec3 light, vec3 material, float ln)
     {
         return light * material * ln;
     }
 
-    mediump vec3 calculateSpecularColor(mediump vec3 light, mediump vec3 material, mediump float reflection, mediump float strength)
+    vec3 calculateSpecularColor(vec3 light, vec3 material, float reflection, float strength)
     {
         return light * material * reflection * strength;
     }
 
-    mediump vec3 calculateRimColor(mediump vec3 color, mediump float normalZ, mediump float width, mediump float power)
+    vec3 calculateRimColor(vec3 color, float normalZ, float width, float power)
     {
         return color * pow(width * (1.0 - abs(normalZ)), power);
     }
 
-    mediump float calculateDot(mediump vec3 light, mediump vec3 normal)
+    float calculateDot(vec3 light, vec3 normal)
     {
         return max(dot(light, normal), 0.1);
     }
 
-    varying mediump vec4 v_color;
-    varying mediump vec4 v_position;
-    varying mediump vec3 v_normal;
-    varying mediump vec3 v_tangent;
-    varying mediump vec2 v_texCoord;
+    varying vec4 v_color;
+    varying vec4 v_position;
+    varying vec3 v_normal;
+    varying vec3 v_tangent;
+    varying vec2 v_texCoord;
 
-    uniform mediump vec3  u_const1;
-    uniform mediump vec3  u_const2;
-    uniform mediump vec3  u_const3;
+    uniform vec3  u_const1;
+    uniform vec3  u_const2;
+    uniform vec3  u_const3;
 
-    uniform mediump vec3 u_light_ambient;
-    uniform mediump vec3 u_light_diffuse;
-    uniform mediump vec3 u_light_dir;
+    uniform vec3 u_light_ambient;
+    uniform vec3 u_light_diffuse;
+    uniform vec3 u_light_dir;
     uniform bool u_light_enable;
-    uniform mediump vec3 u_light_specular;
+    uniform vec3 u_light_specular;
 
-    uniform mediump vec3 u_material_ambient;
-    uniform mediump vec3 u_material_diffuse;
-    uniform mediump vec3 u_material_specular;
+    uniform vec3 u_material_ambient;
+    uniform vec3 u_material_diffuse;
+    uniform vec3 u_material_specular;
     uniform int u_material_specular_mode;
-    uniform mediump float u_material_specular_power;
+    uniform float u_material_specular_power;
 
     uniform int u_mode;
 
-    uniform mediump vec3  u_rim_color;
-    uniform mediump float u_rim_power;
+    uniform vec3  u_rim_color;
+    uniform float u_rim_power;
 
     uniform sampler2D s_texture;
 
     void main()
     {
-        mediump vec4 color;
-        mediump float specularPower = u_material_specular_power;
-        mediump float rimWidth = v_color.a;
+        vec4 color;
+        float specularPower = u_material_specular_power;
+        float rimWidth = v_color.a;
 
         if(u_mode == MODULATE_MODE_CONSTANT)
         {
@@ -336,15 +332,15 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
 
         if(u_light_enable)
         {
-            mediump vec3 ambient = calculateAmbientColor(u_light_ambient.xyz, u_material_ambient.xyz);
-            mediump vec3 norm = normalize(v_normal);
-            mediump vec3 eye = normalize(-v_position.xyz);
-            mediump float fDot = calculateDot(u_light_dir, norm);
-            mediump vec3 diffuse = calculateDiffuseColor(u_light_diffuse.xyz, u_material_diffuse.xyz, fDot);
-            mediump float specularBlinn = calculateBlinnSpecular(u_light_dir, norm, eye, u_material_specular_power);
+            vec3 ambient = calculateAmbientColor(u_light_ambient.xyz, u_material_ambient.xyz);
+            vec3 norm = normalize(v_normal);
+            vec3 eye = normalize(-v_position.xyz);
+            float fDot = calculateDot(u_light_dir, norm);
+            vec3 diffuse = calculateDiffuseColor(u_light_diffuse.xyz, u_material_diffuse.xyz, fDot);
+            float specularBlinn = calculateBlinnSpecular(u_light_dir, norm, eye, u_material_specular_power);
 
-            mediump float reflection;
-            mediump float strength = v_color.g;
+            float reflection;
+            float strength = v_color.g;
             if(u_material_specular_mode == 0) // blinn
             {
                 strength = 1.0;
@@ -352,11 +348,11 @@ const char* fragmentShaderCodeFFL = GLSL_FRAG(
             }
             else
             {
-                mediump float specularAniso = calculateAnisotropicSpecular(u_light_dir, v_tangent, eye, u_material_specular_power);
+                float specularAniso = calculateAnisotropicSpecular(u_light_dir, v_tangent, eye, u_material_specular_power);
                 reflection = calculateSpecularBlend(v_color.r, specularBlinn, specularAniso);
             }
-            mediump vec3 specular = calculateSpecularColor(u_light_specular.xyz, u_material_specular.xyz, reflection, strength);
-            mediump vec3 rimColor = calculateRimColor(u_rim_color.rgb, norm.z, rimWidth, u_rim_power);
+            vec3 specular = calculateSpecularColor(u_light_specular.xyz, u_material_specular.xyz, reflection, strength);
+            vec3 rimColor = calculateRimColor(u_rim_color.rgb, norm.z, rimWidth, u_rim_power);
             color.rgb = (ambient + diffuse) * color.rgb + specular + rimColor;
         }
 
@@ -1124,7 +1120,7 @@ void InitCharModelTextures(FFLCharModel* pCharModel)
 
     // zero-init all of this
     memset(&gFacelineRenderTexture.texture, 0, sizeof(gFacelineRenderTexture.texture));
-    for (int i = 0; i < (sizeof(gMaskRenderTextures) / sizeof(gMaskRenderTextures[0])); i++)
+    for (size_t i = 0; i < (sizeof(gMaskRenderTextures) / sizeof(gMaskRenderTextures[0])); i++)
     {
         memset(&gMaskRenderTextures[i].texture, 0, sizeof(gMaskRenderTextures[0].texture));
     }
@@ -1333,7 +1329,7 @@ void UpdateCharModel(FFLCharModel* pModel, const FFLiCharInfo* pNewCharInfo)
     {
         UnloadRenderTexture(gFacelineRenderTexture);
     }
-    for (int i = 0; i < (sizeof(gMaskRenderTextures) / sizeof(gMaskRenderTextures[0])); i++)
+    for (size_t i = 0; i < (sizeof(gMaskRenderTextures) / sizeof(gMaskRenderTextures[0])); i++)
     {
         if (gMaskRenderTextures[i].id)
         {
@@ -1754,12 +1750,8 @@ void UpdateBodyScale(Vector3* pBodyScale, Vector3* pBoneScales, float build, flo
         UpdateScaleForFFLBodyModel(&pBoneScales[i], i, pBodyScale);
 }
 
-extern bool FFLiCompareCharInfoWithAdditionalInfo(int* pFlagOut, int flagIn, const FFLiCharInfo* pCharInfoA, const FFLiCharInfo* pCharInfoB, const FFLAdditionalInfo* pAdditionalInfoA, const FFLAdditionalInfo* pAdditionalInfoB)
-#if defined(__clang__) && !defined(__EMSCRIPTEN__)
-asm("__Z37FFLiCompareCharInfoWithAdditionalInfoPiiPK12FFLiCharInfoS2_PK17FFLAdditionalInfoS5_");
-#else
-asm("_Z37FFLiCompareCharInfoWithAdditionalInfoPiiPK12FFLiCharInfoS2_PK17FFLAdditionalInfoS5_");
-#endif
+extern bool _Z37FFLiCompareCharInfoWithAdditionalInfoPiiPK12FFLiCharInfoS2_PK17FFLAdditionalInfoS5_(int* pFlagOut, int flagIn, const FFLiCharInfo* pCharInfoA, const FFLiCharInfo* pCharInfoB, const FFLAdditionalInfo* pAdditionalInfoA, const FFLAdditionalInfo* pAdditionalInfoB);
+#define FFLiCompareCharInfoWithAdditionalInfo _Z37FFLiCompareCharInfoWithAdditionalInfoPiiPK12FFLiCharInfoS2_PK17FFLAdditionalInfoS5_
 
 int main(void)
 {
