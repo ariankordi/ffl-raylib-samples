@@ -39,7 +39,7 @@
 #include <nn/ffl.h>
 #include <nn/ffl/detail/FFLiCharInfo.h> // optional, should work in C
 
-#include "body_scale_helpers.c"
+#include "body_scale_helpers_iqm.c"
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -1348,32 +1348,32 @@ void UpdateCharModel(FFLCharModel* pModel, const FFLiCharInfo* pNewCharInfo)
 // and the Wii U MiiBodyMiddle model.
 typedef enum VriableIconBodyBoneKind
 {
-    VriableIconBodyBoneKind_AllRoot   = 0,
-    VriableIconBodyBoneKind_Body      = 1,
-    VriableIconBodyBoneKind_SklRoot   = 2,
-    VriableIconBodyBoneKind_Chest     = 3,
-    VriableIconBodyBoneKind_ArmL1     = 4,
-    VriableIconBodyBoneKind_ArmL2     = 5,
-    VriableIconBodyBoneKind_WristL    = 6,
-    VriableIconBodyBoneKind_ElbowL    = 7,
-    VriableIconBodyBoneKind_ShoulderL = 8,
-    VriableIconBodyBoneKind_ArmR1     = 9,
-    VriableIconBodyBoneKind_ArmR2     = 10,
-    VriableIconBodyBoneKind_WristR    = 11,
-    VriableIconBodyBoneKind_ElbowR    = 12,
-    VriableIconBodyBoneKind_ShoulderR = 13,
-    VriableIconBodyBoneKind_Head      = 14,
-    VriableIconBodyBoneKind_Chest2    = 15,
-    VriableIconBodyBoneKind_Hip       = 16,
-    VriableIconBodyBoneKind_FootL1    = 17,
-    VriableIconBodyBoneKind_FootL2    = 18,
-    VriableIconBodyBoneKind_AnkleL    = 19,
-    VriableIconBodyBoneKind_KneeL     = 20,
-    VriableIconBodyBoneKind_FootR1    = 21,
-    VriableIconBodyBoneKind_FootR2    = 22,
-    VriableIconBodyBoneKind_AnkleR    = 23,
-    VriableIconBodyBoneKind_KneeR     = 24,
-    VriableIconBodyBoneKind_End       = 25
+    VriableIconBodyBoneKind_AllRoot = 1,
+    VriableIconBodyBoneKind_Body,
+    VriableIconBodyBoneKind_SklRoot,
+    VriableIconBodyBoneKind_Chest,
+    VriableIconBodyBoneKind_ArmL1,
+    VriableIconBodyBoneKind_ArmL2,
+    VriableIconBodyBoneKind_WristL,
+    VriableIconBodyBoneKind_ElbowL,
+    VriableIconBodyBoneKind_ShoulderL,
+    VriableIconBodyBoneKind_ArmR1,
+    VriableIconBodyBoneKind_ArmR2,
+    VriableIconBodyBoneKind_WristR,
+    VriableIconBodyBoneKind_ElbowR,
+    VriableIconBodyBoneKind_ShoulderR,
+    VriableIconBodyBoneKind_Head,
+    VriableIconBodyBoneKind_Chest2,
+    VriableIconBodyBoneKind_Hip,
+    VriableIconBodyBoneKind_FootL1,
+    VriableIconBodyBoneKind_FootL2,
+    VriableIconBodyBoneKind_AnkleL,
+    VriableIconBodyBoneKind_KneeL,
+    VriableIconBodyBoneKind_FootR1,
+    VriableIconBodyBoneKind_FootR2,
+    VriableIconBodyBoneKind_AnkleR,
+    VriableIconBodyBoneKind_KneeR,
+    VriableIconBodyBoneKind_End,
 } VriableIconBodyBoneKind;
 
 
@@ -1535,7 +1535,8 @@ void UpdateModelAnimationBonesScaling(Model model, ModelAnimation anim, int fram
 #if 1
     if (perBoneScales)
     {
-        for (int i = 0; i < anim.boneCount; i++)
+        // for (int i = 0; i < anim.boneCount; i++)
+        for (int i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
             worldPoses[i].scale = Vector3Multiply(worldPoses[i].scale, perBoneScales[i]);
     }
 #endif
@@ -1817,12 +1818,12 @@ int main(void)
 
 #ifndef NO_MODELS_FOR_TEST
     // Load body model
-    const char* modelPath = "models/miibodymiddle female test.glb";
+    const char* modelPath = "models/miibodymiddle female test.iqm";
     const float bodyScale = 1.0f;
     const Vector3 vecBodyScaleConst = (Vector3) { bodyScale, bodyScale, bodyScale };
     Matrix matBodyScale = MatrixScale(vecBodyScaleConst.x, vecBodyScaleConst.y, vecBodyScaleConst.z);
     Model model = LoadModel(modelPath);
-    Model acceModel = LoadModel("models/cat ear.glb"); // LoadModel("models/bear.glb");;
+    Model acceModel = LoadModel("models/cat ear.iqm"); // LoadModel("models/bear.glb");;
     if (model.meshes == NULL)
         TraceLog(LOG_DEBUG, "Body model failed to load, not going to attempt drawing it.");
     if (acceModel.meshes == NULL)
@@ -1844,7 +1845,7 @@ int main(void)
     int animsCount = 0;
     unsigned int animIndex = 0;
     int animCurrentFrame = 0;
-    ModelAnimation* modelAnimations = LoadModelAnimationsGLBParents(modelPath, &animsCount);
+    ModelAnimation* modelAnimations = LoadModelAnimationsIQMParents(modelPath, &animsCount);
     if (modelAnimations == NULL)
         TraceLog(LOG_DEBUG, "modelAnimations == NULL, not updating animation or head matrices");
 
@@ -1897,7 +1898,7 @@ int main(void)
 #endif
 
     Vector3 boneScales[VriableIconBodyBoneKind_End];
-    for (size_t i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
+    for (int i = VriableIconBodyBoneKind_AllRoot; i < VriableIconBodyBoneKind_End; i++)
         boneScales[i].x = boneScales[i].y = boneScales[i].z = 1.0f;
 
     int scrollOffset = 0;
@@ -2025,7 +2026,7 @@ int main(void)
             {
                 const int zero = 0;
                 SetShaderValue(gShaderForFFL.shader, gShaderForFFL.pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_MODE], &zero, SHADER_UNIFORM_INT);
-                if ((i % 2) == 1) // pants
+                if ((i % 2) == 0) // pants
                 {
                     ShaderForFFL_SetMaterial(&gShaderForFFL, &cMaterialParam[MATERIAL_PARAM_PANTS]);
                     SetShaderValue(gShaderForFFL.shader, gShaderForFFL.pixelUniformLocation[SH_FFL_PIXEL_UNIFORM_CONST1], &pantsColor, SHADER_UNIFORM_VEC3);

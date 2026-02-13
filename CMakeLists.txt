@@ -28,6 +28,8 @@ endif()
 # -------------------- Dependencies --------------------
 
 # raylib -----------------------------------
+# TODO: should we make this smaller by removing deps?
+# https://github.com/pongasoft/re-edit/blob/73158b3c5536a0a5d43f32a1b0a3423ebe8118d7/CMakeLists.txt#L65
 if(raylib_DIR) # raylib's CMake build directory
     # Direct import from build directory.
     add_library(raylib STATIC IMPORTED)
@@ -166,8 +168,6 @@ target_compile_definitions(ffl_raylib_shader_basic PRIVATE ${COMMON_DEFS})
 add_executable(ffl_raylib_shader_fflshader ffl_raylib_shader_fflshader.c)
 target_include_directories(ffl_raylib_shader_fflshader PRIVATE
     ${COMMON_INCLUDES}
-    # include cgltf.h
-    ${raylib_SOURCE_DIR}/src/external
     ${raygui_h_SOURCE_DIR})
 target_link_libraries(ffl_raylib_shader_fflshader PRIVATE ${COMMON_LIBRARIES})
 target_compile_definitions(ffl_raylib_shader_fflshader PRIVATE ${COMMON_DEFS})
