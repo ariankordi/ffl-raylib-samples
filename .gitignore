@@ -16,13 +16,9 @@ FFLRes*.dat
 *.user
 
 # CMake
-CMakeLists.txt.user
-CMakeCache.txt
 CMakeFiles
-build
-cmake_install.cmake
+build*/
 .cache
-.cmake
 
 # Emscripten
 *.html
