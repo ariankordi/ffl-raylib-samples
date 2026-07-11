@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 include(FetchContent)
 project(ffl-raylib-samples LANGUAGES C)
 
-option(BUILD_RAYLIB "Build raylib instead of importing it." OFF)
-option(USE_LATEST_RAYLIB_RGFW "When building raylib, use the latest version from master to use RGFW. This is needed for Windows XP support." OFF)
+option(USE_RAYLIB_WITH_RGFW "When building raylib, use a specific version supporting RGFW. This is NEEDED for Windows XP support." OFF)
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -28,48 +27,38 @@ endif()
 # -------------------- Dependencies --------------------
 
 # raylib -----------------------------------
-# TODO: should we make this smaller by removing deps?
 # https://github.com/pongasoft/re-edit/blob/73158b3c5536a0a5d43f32a1b0a3423ebe8118d7/CMakeLists.txt#L65
-if(raylib_DIR) # raylib's CMake build directory
-    # Direct import from build directory.
-    add_library(raylib STATIC IMPORTED)
-    set_target_properties(raylib PROPERTIES
-        IMPORTED_LOCATION "${raylib_DIR}/libraylib.a"
-        INTERFACE_INCLUDE_DIRECTORIES "${raylib_DIR}/include"
+
+# Fetch/build raylib locally. Disable examples.
+set(FETCHCONTENT_QUIET OFF)
+set(BUILD_EXAMPLES OFF CACHE INTERNAL "")
+
+if(USE_RAYLIB_WITH_RGFW)
+    FetchContent_Declare(
+        raylib
+        GIT_REPOSITORY https://github.com/raysan5/raylib
+        GIT_SHALLOW 1
+        # THIS commit is required because
+        # - the repo uses pre-6.0 skeletal animation logic
+        # - this commit supports RGFW unlike 5.5
+        GIT_TAG 703bd9caab50b139428cea1aaff9974ebee5742e
     )
 else()
-    if (BUILD_RAYLIB)
-        message(STATUS "Forcing raylib to be fetched (for cross-compiling).")
-        set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE NEVER)
-    endif()
+    set(RAYLIB_VERSION 5.5)
+    # This will ACTUALLY find_package() before downloading it.
+    FetchContent_Declare(
+        raylib
+        URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.zip
+        FIND_PACKAGE_ARGS ${RAYLIB_VERSION} EXACT
+        DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    )
+endif()
 
-    # Fetch raylib and build it locally.
-    set(FETCHCONTENT_QUIET OFF)
-
-    set(BUILD_EXAMPLES OFF CACHE INTERNAL "")
-    if(USE_LATEST_RAYLIB_RGFW)
-        # Use RGFW, which is lighter and more compatible.
-        # This requires whatever version was released after: https://github.com/raysan5/raylib/commit/983efae3e4565cdf1441cb0b3dff9498bb0147e8
-        set(PLATFORM RGFW CACHE INTERNAL "")
-        FetchContent_Declare(
-            raylib
-            GIT_REPOSITORY https://github.com/raysan5/raylib
-            GIT_SHALLOW 1
-        )
-    else()
-        set(RAYLIB_VERSION 5.5)
-        # This will ACTUALLY find_package() before downloading it.
-        FetchContent_Declare(
-            raylib
-            URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.zip
-            FIND_PACKAGE_ARGS ${RAYLIB_VERSION} EXACT
-            DOWNLOAD_EXTRACT_TIMESTAMP OFF
-        )
-    endif()
-    if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
-        set(FETCHCONTENT_QUIET OFF)
-        FetchContent_MakeAvailable(raylib)
-    endif()
+if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
+    FetchContent_MakeAvailable(raylib)
+endif()
+if(DEFINED raylib_SOURCE_DIR) # ONLY works if we are building raylib.
+    target_compile_definitions(raylib PRIVATE SUPPORT_GPU_SKINNING=1)
 endif()
 
 # raygui -----------------------------------
@@ -85,7 +74,7 @@ FetchContent_MakeAvailable(raygui_h)
 
 set(FFL_BUILD_SHARED OFF)
 set(FFL_BUILD_STATIC ON)  # Build FFL as a static library.
-set(FFL_BUILD_EMSCRIPTEN_MODULE OFF) # Needed for Emscripten compatibility, when importing the lib
+set(FFL_NO_DATABASE_DEFAULT ON) # Exclude default/guest Miis.
 #set(FFL_NO_NINTEXUTILS ON)
 
 add_subdirectory(FFL-Testing/ffl) # Use FFL's CMakeLists.
@@ -93,15 +82,15 @@ add_subdirectory(FFL-Testing/ffl) # Use FFL's CMakeLists.
 # C++ Support ------------------------------
 
 # This file includes stubs for C++ language functions.
-file(WRITE ${CMAKE_BINARY_DIR}/cppsupport.cpp
+file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/cppsupport.cpp CONTENT
 "#include <stdlib.h>
 extern \"C\" void __cxa_pure_virtual() { abort(); }
 void* operator new(size_t s) { return malloc(s); }
 void* operator new[](size_t s) { return malloc(s); }
 void operator delete(void* p) { free(p); }
-void operator delete(void* p, size_t sz) { free(p); }
+void operator delete(void* p, size_t sz) { (void)sz; free(p); }
 void operator delete[](void* p) { free(p); }
-void operator delete[](void* p, size_t sz) { free(p); }
+void operator delete[](void* p, size_t sz) { (void)sz; free(p); }
 ")
 add_library(cppsupport STATIC ${CMAKE_BINARY_DIR}/cppsupport.cpp)
 set_source_files_properties(${CMAKE_BINARY_DIR}/cppsupport.cpp PROPERTIES LANGUAGE C)
@@ -137,7 +126,7 @@ endif()
 
 # Common compile definitions
 set(COMMON_DEFS
-    FFL_USE_TEXTURE_CALLBACK
+    FFL_NO_RIO
     SUPPORT_TRACELOG
 )
 
@@ -176,7 +165,7 @@ target_compile_definitions(ffl_raylib_shader_fflshader PRIVATE ${COMMON_DEFS})
 
 if(EMSCRIPTEN)
     set(EM_FLAGS
-        -sUSE_GLFW=3 -sUSE_ZLIB=1 -sALLOW_MEMORY_GROWTH
+        -sUSE_ZLIB=1 -sALLOW_MEMORY_GROWTH
         -sASYNCIFY -sEXPORTED_RUNTIME_METHODS=ccall
         --preload-file ../FFLResHigh.dat@FFLResHigh.dat
     )

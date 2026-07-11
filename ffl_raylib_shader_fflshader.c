@@ -1348,7 +1348,7 @@ void UpdateCharModel(FFLCharModel* pModel, const FFLiCharInfo* pNewCharInfo)
 // and the Wii U MiiBodyMiddle model.
 typedef enum VriableIconBodyBoneKind
 {
-    VriableIconBodyBoneKind_AllRoot = 1,
+    VriableIconBodyBoneKind_AllRoot,
     VriableIconBodyBoneKind_Body,
     VriableIconBodyBoneKind_SklRoot,
     VriableIconBodyBoneKind_Chest,
@@ -1373,7 +1373,7 @@ typedef enum VriableIconBodyBoneKind
     VriableIconBodyBoneKind_FootR2,
     VriableIconBodyBoneKind_AnkleR,
     VriableIconBodyBoneKind_KneeR,
-    VriableIconBodyBoneKind_End,
+    VriableIconBodyBoneKind_End = 28,
 } VriableIconBodyBoneKind;
 
 
@@ -1450,9 +1450,8 @@ void UpdateScaleForFFLBodyModel(Vector3* scaleOut, VriableIconBodyBoneKind bone,
     }
 
     default:
-        assert(false && "UpdateScale: Unexpected bone ID passed in.");
+        // assert(false && "UpdateScale: Unexpected bone ID passed in.");
     }
-    return;
 }
 
 //
@@ -1767,10 +1766,8 @@ int main(void)
 
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 600;
-
-    InitWindow(screenWidth, screenHeight, "raylib [models] example - draw cube texture");
+    SetConfigFlags(FLAG_WINDOW_HIGHDPI | FLAG_WINDOW_RESIZABLE);
+    InitWindow(800, 600, "raylib [models] example - draw cube texture");
 
     TraceLog(LOG_DEBUG, "Calling ShaderForFFL_Initialize(%p)", &gShaderForFFL);
     ShaderForFFL_Initialize(&gShaderForFFL);
@@ -1980,7 +1977,16 @@ int main(void)
             UpdateModelAnimationBonesScaling(model, anim, animCurrentFrame, boneScales);
             //UpdateModelAnimation(model, anim, animCurrentFrame);
 
-            headBoneMatrix = model.meshes[0].boneMatrices[VriableIconBodyBoneKind_Head];
+            {
+                Transform *bindTransform = &model.bindPose[VriableIconBodyBoneKind_Head];
+                Matrix bindMatrix = MatrixMultiply(MatrixMultiply(
+                    MatrixScale(bindTransform->scale.x, bindTransform->scale.y, bindTransform->scale.z),
+                    QuaternionToMatrix(bindTransform->rotation)),
+                    MatrixTranslate(bindTransform->translation.x, bindTransform->translation.y, bindTransform->translation.z));
+
+                headBoneMatrix = MatrixMultiply(bindMatrix,
+                    model.meshes[0].boneMatrices[VriableIconBodyBoneKind_Head]);
+            }
             // decompose the head bone matrix to JUST translation
             headBoneMatrix = MatrixTranslate(headBoneMatrix.m12, headBoneMatrix.m13, headBoneMatrix.m14);
             headModelMatrix = MatrixMultiply(headBoneMatrix, matBodyScale);
@@ -2093,8 +2099,8 @@ int main(void)
         // UI Panel with scroll.
         int width = 280;
         Rectangle scrollPanelBounds = {
-            (float)(screenWidth - width), 10.0f, 250.0f,
-            (float)(screenHeight - 20.0f)
+            (float)(GetScreenWidth() - width), 10.0f, 250.0f,
+            (float)(GetScreenHeight() - 20.0f)
         };
         Vector2 scrollPanelScroll = {0.0f, (float)scrollOffset};
         Rectangle scrollPanelContent = {0.0f, 0.0f, 180.0f, 1400.0f};
