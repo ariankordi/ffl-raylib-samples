@@ -1,3 +1,10 @@
+# Deprecated Repo (2026)
+I'm archiving this repo because of breaking changes in [my FFL fork](https://github.com/ariankordi/ffl), and because I am soon about to publish a library for Mii rendering with Raylib in a more modular way.
+
+The last version of my FFL fork tested to work with this is here: https://github.com/ariankordi/ffl/commit/a784e6c7553b67ce7a4619ad3349676103983534
+
+If you're here for the Mii body model files, what I really want to do is [make a script to automatically extract them](https://github.com/ariankordi/FFL.js/issues/4) and then have a repo dedicated to stuff like that. Until then, the ones here should work fine. 
+
 # FFL Raylib Samples
 Samples for rendering Miis using FFL, the Wii U Mii renderer, and raylib.
 
